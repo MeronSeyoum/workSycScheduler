@@ -2,7 +2,7 @@ import { Client } from "@/types/client";
 import { CreateEmployeeDto, Employee, UpdateEmployeeDto, User } from "@/types/employee";
 import { CreateShiftWithEmployeesDto, EmployeeShift, Shift, ShiftWithEmployees, UpdateShiftDto } from "@/types/shift";
 
-const API_URL = process.env.NEXT_PUBLIC_API_BASE_UR || 'http://localhost:8080/api/v1';
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1';
 
 interface ApiResponse<T = any> {
   message?: string;

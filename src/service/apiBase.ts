@@ -2,7 +2,7 @@
 
 import { ApiResponse } from "@/types/auth";
 
-const API_URL = process.env.NEXT_PUBLIC_API_BASE_UR  || 'http://localhost:8080/api/v1';
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL  || 'http://localhost:8080/api/v1';
 
 interface FetchOptions extends RequestInit {
   responseType?: 'json' | 'blob';
