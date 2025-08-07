@@ -1,0 +1,21 @@
+Employee,Clock-In,Clock-Out,Duration,Status,Location
+"Alex Johnson",7/7/2025, 8:46:00 AM,7/7/2025, 5:34:00 PM,8h 48m,Clocked Out,37.7750, -122.4203
+"Alex Johnson",7/5/2025, 8:48:00 AM,7/5/2025, 6:04:00 PM,9h 16m,Clocked Out,37.7816, -122.4321
+"Alex Johnson",7/4/2025, 9:12:00 AM,7/4/2025, 6:51:00 PM,9h 39m,Clocked Out,37.7757, -122.4188
+"Alex Johnson",7/3/2025, 9:15:00 AM,7/3/2025, 4:36:00 PM,7h 21m,Clocked Out,37.7743, -122.4195
+"Alex Johnson",7/2/2025, 9:03:00 AM,7/2/2025, 4:50:00 PM,7h 47m,Clocked Out,37.7747, -122.4186
+"Alex Johnson",7/1/2025, 9:24:00 AM,7/1/2025, 4:43:00 PM,7h 19m,Clocked Out,37.7755, -122.4196
+"Alex Johnson",6/30/2025, 9:20:00 AM,6/30/2025, 5:43:00 PM,8h 23m,Clocked Out,37.7813, -122.4319
+"Alex Johnson",6/27/2025, 8:52:00 AM,6/27/2025, 5:29:00 PM,8h 37m,Clocked Out,37.7759, -122.4186
+"Alex Johnson",6/26/2025, 8:00:00 AM,6/26/2025, 4:49:00 PM,8h 49m,Clocked Out,37.7808, -122.4327
+"Alex Johnson",6/25/2025, 9:11:00 AM,6/25/2025, 6:04:00 PM,8h 53m,Clocked Out,37.7745, -122.4195
+"Alex Johnson",6/24/2025, 8:31:00 AM,6/24/2025, 4:53:00 PM,8h 22m,Clocked Out,37.7814, -122.4317
+"Alex Johnson",6/23/2025, 8:38:00 AM,6/23/2025, 4:43:00 PM,8h 5m,Clocked Out,37.7741, -122.4197
+"Alex Johnson",6/20/2025, 8:07:00 AM,6/20/2025, 4:48:00 PM,8h 41m,Clocked Out,37.7808, -122.4330
+"Alex Johnson",6/19/2025, 8:42:00 AM,6/19/2025, 6:39:00 PM,9h 57m,Clocked Out,37.7739, -122.4192
+"Alex Johnson",6/18/2025, 8:17:00 AM,6/18/2025, 5:15:00 PM,8h 58m,Clocked Out,37.7754, -122.4186
+"Alex Johnson",6/17/2025, 8:48:00 AM,6/17/2025, 5:00:00 PM,8h 12m,Clocked Out,37.7809, -122.4324
+"Alex Johnson",6/16/2025, 9:00:00 AM,6/16/2025, 4:56:00 PM,7h 56m,Clocked Out,37.7744, -122.4197
+"Alex Johnson",6/13/2025, 8:09:00 AM,6/13/2025, 6:26:00 PM,10h 17m,Clocked Out,37.7811, -122.4317
+"Alex Johnson",6/12/2025, 8:11:00 AM,6/12/2025, 6:36:00 PM,10h 25m,Clocked Out,37.7821, -122.4328
+"Alex Johnson",6/11/2025, 8:12:00 AM,6/11/2025, 4:41:00 PM,8h 29m,Clocked Out,37.7758, -122.4187
