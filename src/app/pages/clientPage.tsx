@@ -15,7 +15,6 @@ import {
   Badge,
   Tooltip,
   notification,
-  Skeleton,
 } from "antd";
 import {
   UserOutlined,
@@ -34,9 +33,10 @@ import {
   ShopOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
-import { useAuth } from "@/components/AuthProvider";
-import { Client, ClientStatus } from "@/types/client";
-import { api } from "@/service/api"; // Updated import
+import { useAuth } from "@/components/providers/AuthProvider";
+import { Client, ClientStatus } from "@/lib/types/client";
+import { api } from "@/lib/api"; // Updated import
+import { Skeleton } from "@/components/ui/common/skeleton";
 
 import ClientForm from "@/components/form/ClientForm";
 import { useDebounce } from "use-debounce";
@@ -145,39 +145,47 @@ const ClientPage: React.FC = () => {
     fetchClients();
   }, [fetchClients]);
 
-  const handleSubmit = useCallback(
-    async (values: Client | Omit<Client, "id">) => {
-      setFormLoading(true);
-      try {
-        const isUpdate = "id" in values;
-        const action = isUpdate
-          ? api.clients.updateClient(values.id, values, token!)
-          : api.clients.createClient(values, token!);
+ const handleSubmit = useCallback(
+  async (values: Client | Omit<Client, "id">) => {
+    setFormLoading(true);
+    try {
+      const isUpdate = "id" in values;
 
-        await action;
-        showNotification(
-          "success",
-          isUpdate ? "Client Updated" : "Client Created",
-          `${values.business_name} ${
-            isUpdate ? "updated" : "added"
-          } successfully`
-        );
-        setDrawerVisible(false);
-        await fetchClients();
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Operation failed";
-        showNotification(
-          "error",
-          "id" in values ? "Update Failed" : "Creation Failed",
-          errorMessage
-        );
-      } finally {
-        setFormLoading(false);
+      // Create a clean payload without id
+      const { id, notes, ...rest } = values as Client;
+      const payload = {
+        ...rest,
+        notes: notes ?? "" // Ensure notes is always a string
+      };
+
+      if (isUpdate) {
+        await api.clients.updateClient(id, payload, token!);
+      } else {
+        await api.clients.createClient(payload, token!);
       }
-    },
-    [token, fetchClients, showNotification]
-  );
+
+      showNotification(
+        "success",
+        isUpdate ? "Client Updated" : "Client Created",
+        `${values.business_name} ${isUpdate ? "updated" : "added"} successfully`
+      );
+      setDrawerVisible(false);
+      await fetchClients();
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Operation failed";
+      showNotification(
+        "error",
+        "id" in values ? "Update Failed" : "Creation Failed",
+        errorMessage
+      );
+    } finally {
+      setFormLoading(false);
+    }
+  },
+  [token, fetchClients, showNotification]
+);
+
 
   const handleDelete = useCallback(
     async (id: number) => {

@@ -31,9 +31,9 @@ export default function AttendanceStats({
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 ">
       {/* Present Card */}
-      <Card className="border-l-4 border-green-500 hover:shadow-md transition-shadow">
+      <Card className="border-l-4 border-green-500 hover:shadow-md transition-shadow bg-white">
         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
           <CardTitle className="text-sm font-medium text-gray-600">Present</CardTitle>
           <UserCheck className={`h-5 w-5 ${statusColors.present.icon}`} />
@@ -57,7 +57,7 @@ export default function AttendanceStats({
       </Card>
 
       {/* Late Card */}
-      <Card className="border-l-4 border-yellow-500 hover:shadow-md transition-shadow">
+      <Card className="border-l-4 border-yellow-500 hover:shadow-md transition-shadow bg-white">
         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
           <CardTitle className="text-sm font-medium text-gray-600">Late Arrivals</CardTitle>
           <AlarmClock className={`h-5 w-5 ${statusColors.late.icon}`} />
@@ -81,7 +81,7 @@ export default function AttendanceStats({
       </Card>
 
       {/* Absent Card */}
-      <Card className="border-l-4 border-red-500 hover:shadow-md transition-shadow">
+      <Card className="border-l-4 border-red-500 hover:shadow-md transition-shadow bg-white">
         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
           <CardTitle className="text-sm font-medium text-gray-600">Absent</CardTitle>
           <UserX className={`h-5 w-5 ${statusColors.absent.icon}`} />
@@ -105,7 +105,7 @@ export default function AttendanceStats({
       </Card>
 
       {/* Early Departures Card */}
-      <Card className="border-l-4 border-orange-500 hover:shadow-md transition-shadow">
+      <Card className="border-l-4 border-orange-500 hover:shadow-md transition-shadow bg-white">
         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
           <CardTitle className="text-sm font-medium text-gray-600">Early Departures</CardTitle>
           <Clock3 className={`h-5 w-5 ${statusColors.early.icon}`} />

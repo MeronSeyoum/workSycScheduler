@@ -5,8 +5,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../Table';
-import { Badge } from '@/components/ui/badge';
+} from '../common/Table';
+import { Badge } from '@/components/ui/common/badge';
 import { Clock, MapPin, User, Calendar, Check, X, Clock as ClockIcon } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 
@@ -21,7 +21,7 @@ interface AttendanceRecord {
   status: 'present' | 'late' | 'absent' | 'early';
   hoursWorked: number | null;
   shiftType: string;
-  location: string;
+  location: string | null;
   method: 'geofence' | 'qrcode' | 'manual';
 }
 

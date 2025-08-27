@@ -34,11 +34,11 @@ import {
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
-import { useAuth } from "@/components/AuthProvider";
-import { api } from "@/service/api"; // Updated import
+import { useAuth } from "@/components/providers/AuthProvider";
+import { api } from "@/lib/api"; // Updated import
 import EmployeeForm from "@/components/form/EmployeeForm";
-import type { Employee } from "@/types/employee";
-import { Skeleton } from "@/components/ui/skeleton";
+import type { Employee } from "@/lib/types/employee";
+import { Skeleton } from "@/components/ui/common/skeleton";
 
 const { Option } = Select;
 const { Text } = Typography;
@@ -153,7 +153,7 @@ const EmployeePage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [token, showWarningNotification, showWarningNotification]);
+  }, [token]);
 
   const fetchLocations = useCallback(async () => {
     if (!token) return;

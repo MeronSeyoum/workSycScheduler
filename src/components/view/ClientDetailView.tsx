@@ -23,8 +23,8 @@ import {
   UserOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { QRCode } from '@/types/qrcode';
-import { Client } from '@/types/client';
+import { QRCode } from '@/lib/types/qrcode';
+import { Client } from '@/lib/types/client';
 
 const { Title } = Typography;
 

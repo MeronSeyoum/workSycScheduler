@@ -32,10 +32,10 @@ import {
   ExportOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
-import { useAuth } from "@/components/AuthProvider";
-import { api } from "@/service/api";
+import { useAuth } from "@/components/providers/AuthProvider";
+import { api } from "@/lib/api";
 import { useDebounce } from "use-debounce";
-import { User } from "@/types/user";
+import { User } from "@/lib/types/user";
 import UserForm from "../../components/form/UserForm";
 
 const { Option } = Select;

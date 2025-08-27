@@ -1,7 +1,7 @@
 'use client';
 import { Form, Select, DatePicker, Button } from 'antd';
 import dayjs from 'dayjs';
-import { Client } from '@/types/client';
+import { Client } from '@/lib/types/client';
 
 interface QRCodeFormProps {
   initialValues?: any;

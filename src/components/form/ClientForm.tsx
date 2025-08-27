@@ -19,7 +19,7 @@ import {
   GlobalOutlined,
   IdcardOutlined
 } from '@ant-design/icons';
-import { Client, ClientStatus } from '@/types/client';
+import { Client, ClientStatus } from '@/lib/types/client';
 
 const { Option } = Select;
 const { Title } = Typography;
@@ -47,27 +47,32 @@ const ClientForm: React.FC<ClientFormProps> = ({
     }
   }, [initialValues, form]);
 
-  const onFinish = (values: any) => {
-    const formattedValues = {
-      ...values,
-      location_address: {
-        street: values.street,
-        city: values.city,
-        state: values.state,
-        postal_code: values.postal_code,
-        country: values.country
-      }
-    };
-    
-    // Remove the individual address fields we don't need in the final payload
-    delete formattedValues.street;
-    delete formattedValues.city;
-    delete formattedValues.state;
-    delete formattedValues.postal_code;
-    delete formattedValues.country;
-
-    onSubmit(formattedValues);
+const onFinish = (values: any) => {
+  const formattedValues: any = {
+    ...values,
+    location_address: {
+      street: values.street,
+      city: values.city,
+      state: values.state,
+      postal_code: values.postal_code,
+      country: values.country
+    }
   };
+
+  delete formattedValues.street;
+  delete formattedValues.city;
+  delete formattedValues.state;
+  delete formattedValues.postal_code;
+  delete formattedValues.country;
+
+  // Preserve id if editing
+  if (initialValues?.id) {
+    formattedValues.id = initialValues.id;
+  }
+
+  onSubmit(formattedValues);
+};
+
 
   return (
     <Form

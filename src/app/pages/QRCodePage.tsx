@@ -31,15 +31,15 @@ import {
 } from "@ant-design/icons";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import dayjs from "dayjs";
-import { useAuth } from "@/components/AuthProvider";
-import { api as apiCall } from "@/service/api";
-import { QRCode } from "@/types/qrcode";
-import { Client } from "@/types/client";
+import { useAuth } from "@/components/providers/AuthProvider";
+import { api as apiCall } from "@/lib/api";
+import { QRCode } from "@/lib/types/qrcode";
+import { Client } from "@/lib/types/client";
 import QRCodeForm from "../../components/form/QRCodeForm";
-import QRCodePreviewModal from "../../components/QRCodePreviewModal";
-import { Skeleton } from "@/components/ui/skeleton";
+import QRCodePreviewModal from "../../components/modal/QRCodePreviewModal";
+import { Skeleton } from "@/components/ui/common/skeleton";
 
-const {  Text } = Typography;
+const { Text } = Typography;
 
 interface TableParams {
   pagination: TablePaginationConfig;
@@ -84,15 +84,15 @@ const QRCodePage: React.FC = () => {
   const { showNotification, contextHolder } = useNotification();
 
   // State management
- const [qrcodes, setQRCodes] = useState<QRCode[]>([]);
+  const [qrcodes, setQRCodes] = useState<QRCode[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState({
     table: false,
     clients: false,
     form: false,
   });
-    const [load, setLoad] = useState(false);
-  
+  const [load, setLoad] = useState(false);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
@@ -110,38 +110,42 @@ const QRCodePage: React.FC = () => {
   const fetchData = useCallback(async () => {
     if (!token) return;
 
- try {
-  // setLoading(prev => ({ ...prev, table: true, clients: true }));
-  setLoad(true)
-  
-  // Parallel fetching of QR codes and clients
-  const [qrCodesResponse, clientsResponse] = await Promise.all([
-    apiCall.qrCodes.fetchQRCodes(token, {
-      page: tableParams.pagination?.current,
-      limit: tableParams.pagination?.pageSize,
-    }),
-    apiCall.clients.fetchClients(token)
-  ]);
+    try {
+      // setLoading(prev => ({ ...prev, table: true, clients: true }));
+      setLoad(true);
 
-  // Extract the data array from the paginated response
-  const qrCodesData = qrCodesResponse.data || qrCodesResponse || [];
-  setQRCodes(qrCodesData);
-  setClients(clientsResponse || []);
-  
-  setTableParams(prev => ({
-    ...prev,
-    pagination: {
-      ...prev.pagination,
-      total: qrCodesResponse.total || qrCodesData.length,
-    },
-  }));
-} catch (error: any) {
-  showNotification("error", "Failed to load data", error.message);
-} finally {
-  // setLoading(prev => ({ ...prev, table: false, clients: false }));
-  setLoad(false)
-}
-  }, [token, tableParams.pagination?.current, tableParams.pagination?.pageSize]);
+      // Parallel fetching of QR codes and clients
+      const [qrCodesResponse, clientsResponse] = await Promise.all([
+        apiCall.qrCodes.fetchQRCodes(token, {
+          page: tableParams.pagination?.current,
+          limit: tableParams.pagination?.pageSize,
+        }),
+        apiCall.clients.fetchClients(token),
+      ]);
+
+      // Extract the data array from the paginated response
+      const qrCodesData = qrCodesResponse.data || qrCodesResponse || [];
+      setQRCodes(qrCodesData);
+      setClients(clientsResponse || []);
+
+      setTableParams((prev) => ({
+        ...prev,
+        pagination: {
+          ...prev.pagination,
+          total: qrCodesResponse.total || qrCodesData.length,
+        },
+      }));
+    } catch (error: any) {
+      showNotification("error", "Failed to load data", error.message);
+    } finally {
+      // setLoading(prev => ({ ...prev, table: false, clients: false }));
+      setLoad(false);
+    }
+  }, [
+    token,
+    tableParams.pagination?.current,
+    tableParams.pagination?.pageSize,
+  ]);
 
   useEffect(() => {
     fetchData();
@@ -150,7 +154,7 @@ const QRCodePage: React.FC = () => {
   // Filter QR codes based on search term
   const filteredQRCodes = useMemo(() => {
     if (!searchTerm) return qrcodes;
-    
+
     return qrcodes.filter(
       (qrcode) =>
         qrcode.client_id.toString().includes(searchTerm) ||
@@ -166,8 +170,8 @@ const QRCodePage: React.FC = () => {
   const handleCreate = async (values: QRCodeFormValues) => {
     if (!token) return;
 
-    setLoading(prev => ({ ...prev, form: true }));
-    
+    setLoading((prev) => ({ ...prev, form: true }));
+
     try {
       await apiCall.qrCodes.createQRCode(
         {
@@ -176,21 +180,21 @@ const QRCodePage: React.FC = () => {
         },
         token
       );
-      
+
       showNotification("success", "QR Code created successfully");
       setDrawerVisible(false);
       await fetchData();
     } catch (error: any) {
       showNotification("error", "Failed to create QR Code", error.message);
     } finally {
-      setLoading(prev => ({ ...prev, form: false }));
+      setLoading((prev) => ({ ...prev, form: false }));
     }
   };
 
   const handleUpdate = async (values: QRCodeFormValues) => {
     if (!currentQRCode || !token) return;
 
-    setLoading(prev => ({ ...prev, form: true }));
+    setLoading((prev) => ({ ...prev, form: true }));
     try {
       await apiCall.qrCodes.updateQRCode(
         currentQRCode.id,
@@ -205,13 +209,13 @@ const QRCodePage: React.FC = () => {
     } catch (error: any) {
       showNotification("error", "Failed to update QR Code", error.message);
     } finally {
-      setLoading(prev => ({ ...prev, form: false }));
+      setLoading((prev) => ({ ...prev, form: false }));
     }
   };
 
   const handleDelete = async (id: number) => {
     if (!token) return;
-    
+
     try {
       await apiCall.qrCodes.deleteQRCode(id, token);
       showNotification("success", "QR Code deleted successfully");
@@ -223,7 +227,7 @@ const QRCodePage: React.FC = () => {
 
   const handleDownload = async (id: number) => {
     if (!token) return;
-    
+
     try {
       const qrCode = qrcodes.find((q) => q.id === id);
       if (!qrCode) return;
@@ -261,9 +265,11 @@ const QRCodePage: React.FC = () => {
           <Avatar
             size={40}
             icon={<QrcodeOutlined />}
-            style={{ backgroundColor: "#fff", color: '#0F6973' }}
+            style={{ backgroundColor: "#fff", color: "#0F6973" }}
           />
-          <Text strong style={{  color: '#0F6973' }}>{record.code_value}</Text>
+          <Text strong style={{ color: "#0F6973" }}>
+            {record.code_value}
+          </Text>
         </Flex>
       ),
     },
@@ -272,7 +278,9 @@ const QRCodePage: React.FC = () => {
       key: "client",
       render: (_, record) => (
         <div>
-          <Text style={{  color: '#0F6973' }} strong>{record.client?.business_name || "N/A"}</Text>
+          <Text style={{ color: "#0F6973" }} strong>
+            {record.client?.business_name || "N/A"}
+          </Text>
           <br />
           <Text type="secondary">{record.client?.email || ""}</Text>
         </div>
@@ -312,147 +320,156 @@ const QRCodePage: React.FC = () => {
         />
       ),
     },
-   {
-  title: "ACTIONS",
-  key: "actions",
-  width: 180,
-  render: (_, record) => {
-    // Find the full client details from the clients state
-    const fullClient = clients.find(client => client.id === record.client_id);
-    console.log("Clinet Data: ", fullClient)
-    return (
-        <Space>
-          <Tooltip title="Preview QR Code">
-            <Button
-              icon={<EyeOutlined />}
+    {
+      title: "ACTIONS",
+      key: "actions",
+      width: 180,
+      render: (_, record) => {
+        // Find the full client details from the clients state
+        const fullClient = clients.find(
+          (client) => client.id === record.client_id
+        );
+        console.log("Client Data: ", fullClient);
+        return (
+          <Space>
+            <Tooltip title="Preview QR Code">
+              <Button
+                icon={<EyeOutlined />}
                 onClick={() => {
-              setCurrentQRCode({
-                ...record,
-                client: fullClient ? {
-                  id: fullClient.id,
-                  business_name: fullClient.business_name,
-                  email: fullClient.email,
-                  contact_person: fullClient.contact_person,
-                  location_address: fullClient.location_address
-                } : undefined
-              });
-              setPreviewVisible(true);
-            }}
-            />
-          </Tooltip>
-          <Tooltip title="Download QR Code">
-            <Button
-              icon={<DownloadOutlined />}
-              onClick={() => handleDownload(record.id)}
-            />
-          </Tooltip>
-          <Tooltip title="Edit QR Code">
-            <Button
-              icon={<EditOutlined />}
-              onClick={() => {
-                setCurrentQRCode(record);
-                setDrawerVisible(true);
-              }}
-            />
-          </Tooltip>
-          <Popconfirm
-            title="Delete QR Code"
-            description="Are you sure to delete this QR code?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="Yes"
-            cancelText="No"
-            okButtonProps={{ danger: true }}
-          >
-            <Tooltip title="Delete QR Code">
-              <Button icon={<DeleteOutlined />} danger />
+                  setCurrentQRCode({
+                    ...record,
+                    client: fullClient
+                      ? {
+                          id: fullClient.id,
+                          business_name: fullClient.business_name,
+                          email: fullClient.email,
+                          contact_person:
+                            fullClient.contact_person ?? undefined,
+                          location_address: fullClient.location_address, // Just pass the address directly
+                        }
+                      : undefined,
+                  });
+                  setPreviewVisible(true);
+                }}
+              />
             </Tooltip>
-          </Popconfirm>
-        </Space>
-       );
-  }
-},
+            <Tooltip title="Download QR Code">
+              <Button
+                icon={<DownloadOutlined />}
+                onClick={() => handleDownload(record.id)}
+              />
+            </Tooltip>
+            <Tooltip title="Edit QR Code">
+              <Button
+                icon={<EditOutlined />}
+                onClick={() => {
+                  setCurrentQRCode(record);
+                  setDrawerVisible(true);
+                }}
+              />
+            </Tooltip>
+            <Popconfirm
+              title="Delete QR Code"
+              description="Are you sure to delete this QR code?"
+              onConfirm={() => handleDelete(record.id)}
+              okText="Yes"
+              cancelText="No"
+              okButtonProps={{ danger: true }}
+            >
+              <Tooltip title="Delete QR Code">
+                <Button icon={<DeleteOutlined />} danger />
+              </Tooltip>
+            </Popconfirm>
+          </Space>
+        );
+      },
+    },
   ];
 
   return (
     <>
       {contextHolder}
-       {load? (
-                      <div className="p-4 space-y-4">
-                        <Skeleton className="h-10 w-full" />
-                        {[...Array(5)].map((_, i) => (
-                          <Skeleton key={i} className="h-16 w-full" />
-                        ))}
-                      </div>
-                    ) : (
-      <div className="m-4 rounded-lg pt-4">
-        <Flex justify="space-between" align="center" style={{ marginBottom: 24 }}>
-          <Flex gap={16} className="flex-1 flex-row justify-between">
-            <Input
-              placeholder="Search QR codes..."
-              prefix={<SearchOutlined />}
-              style={{ width: 300 }}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              allowClear
-            />
-            <Button
-              style={{ backgroundColor: "#0F6973", color: "white" }}
-              icon={<PlusOutlined />}
-              onClick={() => {
-                setCurrentQRCode(null);
-                setDrawerVisible(true);
-              }}
-            >
-              Generate QR Code
-            </Button>
+      {load ? (
+        <div className="p-4 space-y-4 ">
+          <Skeleton className="h-10 w-full" />
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full" />
+          ))}
+        </div>
+      ) : (
+        <div className="m-4 rounded-lg pt-4">
+          <Flex
+            justify="space-between"
+            align="center"
+            style={{ marginBottom: 24 }}
+          >
+            <Flex gap={16} className="flex-1 flex-row justify-between">
+              <Input
+                placeholder="Search QR codes..."
+                prefix={<SearchOutlined />}
+                style={{ width: 300 }}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                allowClear
+              />
+              <Button
+                style={{ backgroundColor: "#0F6973", color: "white" }}
+                icon={<PlusOutlined />}
+                onClick={() => {
+                  setCurrentQRCode(null);
+                  setDrawerVisible(true);
+                }}
+              >
+                Generate QR Code
+              </Button>
+            </Flex>
           </Flex>
-        </Flex>
 
-        <Spin spinning={loading.table}>
-          <Table
-            columns={columns}
-            dataSource={filteredQRCodes}
-            rowKey="id"
-            loading={loading.table}
-            pagination={tableParams.pagination}
-            onChange={handleTableChange}
-            scroll={{ x: 1000 }}
-            bordered
-            style={{
-              backgroundColor: "#fff",
-              borderRadius: 8,
-              boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.03)",
+          <Spin spinning={loading.table}>
+            <Table
+              columns={columns}
+              dataSource={filteredQRCodes}
+              rowKey="id"
+              loading={loading.table}
+              pagination={tableParams.pagination}
+              onChange={handleTableChange}
+              scroll={{ x: 1000 }}
+              bordered
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: 8,
+                boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.03)",
+              }}
+            />
+          </Spin>
+
+          <Drawer
+            title={currentQRCode ? "Edit QR Code" : "Generate QR Code"}
+            width={720}
+            open={drawerVisible}
+            onClose={() => setDrawerVisible(false)}
+            destroyOnClose
+            styles={{
+              body: {
+                paddingBottom: 80,
+              },
             }}
-          />
-        </Spin>
+          >
+            <QRCodeForm
+              initialValues={currentQRCode || undefined}
+              onSubmit={currentQRCode ? handleUpdate : handleCreate}
+              loading={loading.form}
+              clients={clients}
+            />
+          </Drawer>
 
-        <Drawer
-          title={currentQRCode ? "Edit QR Code" : "Generate QR Code"}
-          width={720}
-          open={drawerVisible}
-          onClose={() => setDrawerVisible(false)}
-          destroyOnClose
-          styles={{
-            body: {
-              paddingBottom: 80,
-            },
-          }}
-        >
-          <QRCodeForm
-            initialValues={currentQRCode || undefined}
-            onSubmit={currentQRCode ? handleUpdate : handleCreate}
-            loading={loading.form}
-            clients={clients}
+          <QRCodePreviewModal
+            visible={previewVisible}
+            onClose={() => setPreviewVisible(false)}
+            qrCode={currentQRCode}
+            onDownload={() => currentQRCode && handleDownload(currentQRCode.id)}
           />
-        </Drawer>
-
-     <QRCodePreviewModal
-  visible={previewVisible}
-  onClose={() => setPreviewVisible(false)}
-  qrCode={currentQRCode}
-  onDownload={() => currentQRCode && handleDownload(currentQRCode.id)}
-/>
-      </div>
-                    )}
+        </div>
+      )}
     </>
   );
 };
