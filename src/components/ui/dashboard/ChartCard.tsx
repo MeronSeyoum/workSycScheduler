@@ -1,6 +1,5 @@
 // components/admin/dashboard/ChartCard.tsx
 import React from "react";
-import { ResponsiveContainer } from "recharts";
 import { Calendar } from "lucide-react";
 
 interface ChartCardProps {
@@ -14,8 +13,8 @@ export const ChartCard: React.FC<ChartCardProps> = ({
   dateRange,
   children,
 }) => (
-  <div className="bg-white p-4 rounded-lg shadow h-96 ">
-    <div className="flex justify-between items-center mb-4">
+  <div className="bg-white p-4 rounded-lg shadow h-96  ">
+    <div className="flex justify-between items-center ">
       <h2 className="text-lg font-semibold">{title}</h2>
       {dateRange && (
         <div className="flex items-center gap-2">

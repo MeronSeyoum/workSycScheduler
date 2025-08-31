@@ -1,29 +1,118 @@
-'use client';
+"use client";
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { useAuth } from '@/components/providers/AuthProvider';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { Mail, Lock, User, Eye, EyeOff, ChevronDown, Shield, Briefcase, UserCog, Clock, CheckCircle, Users } from 'lucide-react';
-import Link from 'next/link';
+import React, { useEffect, useState } from "react";
+import { useForm, SubmitHandler } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useAuth } from "@/components/providers/AuthProvider";
+import { useRouter } from "next/navigation";
+import {
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
+  Clock,
+  CheckCircle,
+  Shield,
+  Users,
+  BarChart3,
+  Calendar,
 
+  User,
+  ChevronDown,
+  Briefcase,
+  UserCog,
+} from "lucide-react";
+import Link from "next/link";
+
+// Validation schema
 const registerSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Invalid email address'),
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
   password: z.string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number'),
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number"),
   confirmPassword: z.string(),
-  role: z.enum(['admin', 'manager', 'employee']),
+  role: z.enum(["admin", "manager", "employee"]),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
+
+// Feature data
+const features = [
+   {
+    icon: <Users className="w-5 h-5 lg:w-6 lg:h-6 text-teal-300" />,
+    title: "Team Management",
+    description: "Organize your workforce efficiently with comprehensive team management tools",
+    tags: ["Role management", "Team organization", "Access control"],
+    color: "teal"
+  },
+  {
+    icon: <Shield className="w-5 h-5 lg:w-6 lg:h-6 text-cyan-300" />,
+    title: "Secure Platform",
+    description: "Enterprise-grade security with end-to-end encryption and role-based access controls",
+    tags: ["Data encryption", "2FA support", "Audit logs"],
+    color: "cyan"
+  },
+  {
+    icon: <BarChart3 className="w-5 h-5 lg:w-6 lg:h-6 text-blue-300" />,
+    title: "Advanced Analytics",
+    description: "Real-time insights and comprehensive reporting for data-driven decisions",
+    tags: ["Live dashboards", "Custom reports", "Trend analysis"],
+    color: "blue"
+  },
+  {
+    icon: <Shield className="w-5 h-5 lg:w-6 lg:h-6 text-cyan-300" />,
+    title: "Enterprise-Grade Security",
+    description: "Multi-layered security with end-to-end encryption, two-factor authentication, and role-based access controls. SOC 2 compliant with regular security audits.",
+    tags: ["2FA & MFA", "End-to-end encryption", "GDPR compliant", "Audit logs"],
+    color: "cyan"
+  },
+  {
+    icon: <CheckCircle className="w-5 h-5 lg:w-6 lg:h-6 text-green-300" />,
+    title: "Real-time Workforce Tracking",
+    description: "Live monitoring of attendance, location, and productivity with GPS verification and QR code check-ins. Receive instant notifications and comprehensive reports.",
+    tags: ["GPS geofencing", "QR attendance", "Live dashboard", "Automated reports"],
+    color: "green"
+  },
+
+];
+
+// Custom components
+const FeatureIcon = ({ icon, color }: { icon: React.ReactNode; color: string }) => (
+  <div className={`w-10 h-10 lg:w-12 lg:h-12 bg-${color}-500/20 backdrop-blur-xl rounded-lg lg:rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
+    {icon}
+  </div>
+);
+
+const FeatureTag = ({ tag, color }: { tag: string; color: string }) => (
+  <span className={`inline-block bg-${color}-500/20 text-${color}-300 text-[10px] lg:text-xs px-2 py-1 rounded-full`}>
+    {tag}
+  </span>
+);
+
+const FeatureCard = ({ feature }: { feature: typeof features[0] }) => (
+  <div className={`flex items-start gap-4 p-4 lg:p-6 bg-white/5 backdrop-blur-xl rounded-xl lg:rounded-2xl border border-white/10 hover:border-${feature.color}-400/30 transition-all duration-300 group`}>
+    <FeatureIcon icon={feature.icon} color={feature.color} />
+    <div className="flex-1 min-w-0">
+      <h3 className="text-white font-semibold text-sm lg:text-base mb-1 lg:mb-2">
+        {feature.title}
+      </h3>
+      <p className="text-white/70 text-xs lg:text-sm leading-relaxed">
+        {feature.description}
+      </p>
+      <div className="mt-2 flex flex-wrap gap-1">
+        {feature.tags.map((tag, index) => (
+          <FeatureTag key={index} tag={tag} color={feature.color} />
+        ))}
+      </div>
+    </div>
+  </div>
+);
 
 export default function RegisterPage() {
   const { user, isLoading } = useAuth();
@@ -53,7 +142,7 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormData) => {
     setIsSubmitting(true);
     try {
-      const {  ...registrationData } = data;
+      const { confirmPassword, ...registrationData } = data;
       
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -91,18 +180,21 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900 relative overflow-hidden">
-      <div className="absolute inset-0">
-        <div className="absolute top-20 -right-32 w-64 h-64 rounded-full bg-gradient-to-br from-teal-400/15 via-cyan-300/10 to-blue-400/8 backdrop-blur-sm border border-white/5 shadow-lg"></div>
-        <div className="absolute bottom-20 -left-32 w-64 h-64 bg-gradient-to-tr from-teal-300/20 via-emerald-200/10 to-cyan-300/15 backdrop-blur-sm rounded-full border border-white/5 shadow-lg"></div>
+      {/* Background Elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 -right-20 w-80 h-80 lg:w-96 lg:h-96 rounded-full bg-gradient-to-br from-teal-400/10 via-cyan-300/8 to-blue-400/5 backdrop-blur-2xl"></div>
+        <div className="absolute bottom-1/4 -left-20 w-72 h-72 lg:w-80 lg:h-80 bg-gradient-to-tr from-teal-300/15 via-emerald-200/8 to-cyan-300/10 backdrop-blur-2xl rounded-full"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-blue-200/8 via-teal-200/10 to-cyan-200/6 backdrop-blur-2xl rounded-3xl rotate-45"></div>
       </div>
 
-      <div className="relative z-10 min-h-screen flex">
-        {/* Side Story Section */}
-        <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-8">
-          <div className="max-w-md">
+      <div className="relative z-10 min-h-screen flex max-w-7xl mx-auto gap-10">
+        {/* Left Panel - Features */}
+        <div className="hidden lg:flex lg:w-1/2 items-center justify-center gap-4 py-8 sm:py-12 lg:py-12">
+          <div className="w-full max-w-2xl">
+            {/* Header */}
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 rounded-2xl flex items-center justify-center shadow-md">
-                <Clock className="w-5 h-5 text-white" />
+              <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <Clock className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white">WorkSync</h1>
@@ -110,115 +202,117 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold text-white mb-4">Get Started</h2>
+            <div className="mb-6">
               <p className="text-white/80 text-sm leading-relaxed">
-                Join our platform to streamline your workforce management and optimize business operations with powerful tools.
+                Join our platform to streamline your workforce management and optimize business operations.
               </p>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 p-3 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
-                <div className="w-10 h-10 bg-teal-500/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
-                  <Users className="w-4 h-4 text-teal-300" />
-                </div>
-                <div>
-                  <h3 className="text-white font-medium text-sm">Team Management</h3>
-                  <p className="text-white/70 text-xs">Organize your workforce efficiently</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 p-3 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
-                <div className="w-10 h-10 bg-cyan-500/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
-                  <Shield className="w-4 h-4 text-cyan-300" />
-                </div>
-                <div>
-                  <h3 className="text-white font-medium text-sm">Role-based Access</h3>
-                  <p className="text-white/70 text-xs">Control permissions with precision</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 p-3 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
-                <div className="w-10 h-10 bg-green-500/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
-                  <CheckCircle className="w-4 h-4 text-green-300" />
-                </div>
-                <div>
-                  <h3 className="text-white font-medium text-sm">Real-time Analytics</h3>
-                  <p className="text-white/70 text-xs">Make data-driven decisions</p>
-                </div>
-              </div>
+            {/* Features Grid */}
+            <div className="space-y-4 max-h-auto pr-2">
+              {features.map((feature, index) => (
+                <FeatureCard key={index} feature={feature} />
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Registration Form Section */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-4">
-          <div className="w-full max-w-sm">
-            <div className="lg:hidden flex items-center justify-center gap-2 mb-6">
-              <div className="w-8 h-8 bg-gradient-to-br from-teal-400 to-teal-600 rounded-xl flex items-center justify-center shadow-md">
-                <Shield className="w-4 h-4 text-white" />
+        {/* Right Panel - Registration Form */}
+        <div className="w-full lg:w-1/2 flex-col items-center justify-center p-4 lg:p-10">
+          <div className="hidden lg:flex items-center gap-3 mb-4 lg:pt-16">
+            <h2 className="text-3xl font-bold text-white mb-4">Get Started</h2>
+          </div>
+          
+          <div className="w-full max-w-lg">
+            {/* Mobile Header */}
+            <div className="lg:hidden flex items-center justify-center gap-3 lg:pt-0 pt-20 mb-8">
+              <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Clock className="w-5 h-5 text-white" />
               </div>
               <span className="text-xl font-bold text-white">WorkSync</span>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg">
+            {/* Registration Form */}
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="bg-white/10 backdrop-blur-2xl rounded-2xl p-6 border border-white/20 shadow-xl"
+            >
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-white mb-1">Create Account</h2>
-                <p className="text-white/70 text-sm">Join our platform to manage your workforce</p>
+                <h2 className="text-2xl font-bold text-white mb-2">Create Account</h2>
+                <p className="text-white/70 text-sm">
+                  Join our platform to manage your workforce
+                </p>
               </div>
 
               {errors.root && (
-                <div className="mb-4 p-2 bg-red-400/20 backdrop-blur-sm rounded-lg border border-red-400/30 text-red-100 text-xs">
+                <div className="mb-4 p-3 bg-red-400/20 backdrop-blur-xl rounded-lg border border-red-400/30 text-red-100 text-sm">
                   {errors.root.message}
                 </div>
               )}
 
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div className="space-y-4">
+                {/* Name Field */}
                 <div>
-                  <label className="block text-white/90 text-xs font-medium mb-1">Full Name</label>
+                  <label className="block text-white/90 text-sm font-medium mb-2">
+                    Full Name
+                  </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <User className="h-4 w-4 text-white/50" />
                     </div>
                     <input
-                      {...register('name')}
+                      {...register("name")}
                       type="text"
                       placeholder="John Doe"
-                      className="w-full pl-10 pr-3 py-2 text-sm bg-white/5 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-white/50 focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/20 focus:outline-none transition-all"
+                      className="w-full pl-10 pr-4 py-3 bg-white/5 backdrop-blur-xl border border-white/20 rounded-xl text-white placeholder-white/50 focus:border-teal-400/50 focus:ring-2 focus:ring-teal-400/20 focus:outline-none transition-all duration-200 text-sm"
                       disabled={isSubmitting || isLoading}
                     />
                   </div>
-                  {errors.name && <p className="mt-1 text-xs text-red-300">{errors.name.message}</p>}
+                  {errors.name && (
+                    <p className="mt-1 text-xs text-red-300">
+                      {errors.name.message}
+                    </p>
+                  )}
                 </div>
 
+                {/* Email Field */}
                 <div>
-                  <label className="block text-white/90 text-xs font-medium mb-1">Email Address</label>
+                  <label className="block text-white/90 text-sm font-medium mb-2">
+                    Email Address
+                  </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Mail className="h-4 w-4 text-white/50" />
                     </div>
                     <input
-                      {...register('email')}
+                      {...register("email")}
                       type="email"
                       placeholder="your@email.com"
-                      className="w-full pl-10 pr-3 py-2 text-sm bg-white/5 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-white/50 focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/20 focus:outline-none transition-all"
+                      className="w-full pl-10 pr-4 py-3 bg-white/5 backdrop-blur-xl border border-white/20 rounded-xl text-white placeholder-white/50 focus:border-teal-400/50 focus:ring-2 focus:ring-teal-400/20 focus:outline-none transition-all duration-200 text-sm"
                       disabled={isSubmitting || isLoading}
                     />
                   </div>
-                  {errors.email && <p className="mt-1 text-xs text-red-300">{errors.email.message}</p>}
+                  {errors.email && (
+                    <p className="mt-1 text-xs text-red-300">
+                      {errors.email.message}
+                    </p>
+                  )}
                 </div>
 
+                {/* Password Field */}
                 <div>
-                  <label className="block text-white/90 text-xs font-medium mb-1">Password</label>
+                  <label className="block text-white/90 text-sm font-medium mb-2">
+                    Password
+                  </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Lock className="h-4 w-4 text-white/50" />
                     </div>
                     <input
-                      {...register('password')}
-                      type={showPassword ? 'text' : 'password'}
+                      {...register("password")}
+                      type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
-                      className="w-full pl-10 pr-8 py-2 text-sm bg-white/5 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-white/50 focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/20 focus:outline-none transition-all"
+                      className="w-full pl-10 pr-10 py-3 bg-white/5 backdrop-blur-xl border border-white/20 rounded-xl text-white placeholder-white/50 focus:border-teal-400/50 focus:ring-2 focus:ring-teal-400/20 focus:outline-none transition-all duration-200 text-sm"
                       disabled={isSubmitting || isLoading}
                     />
                     <button
@@ -227,26 +321,33 @@ export default function RegisterPage() {
                       onClick={() => setShowPassword((s) => !s)}
                     >
                       {showPassword ? (
-                        <EyeOff className="h-4 w-4 text-white/50 hover:text-white/70" />
+                        <EyeOff className="h-4 w-4 text-white/50 hover:text-white/70 transition-colors" />
                       ) : (
-                        <Eye className="h-4 w-4 text-white/50 hover:text-white/70" />
+                        <Eye className="h-4 w-4 text-white/50 hover:text-white/70 transition-colors" />
                       )}
                     </button>
                   </div>
-                  {errors.password && <p className="mt-1 text-xs text-red-300">{errors.password.message}</p>}
+                  {errors.password && (
+                    <p className="mt-1 text-xs text-red-300">
+                      {errors.password.message}
+                    </p>
+                  )}
                 </div>
 
+                {/* Confirm Password Field */}
                 <div>
-                  <label className="block text-white/90 text-xs font-medium mb-1">Confirm Password</label>
+                  <label className="block text-white/90 text-sm font-medium mb-2">
+                    Confirm Password
+                  </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Lock className="h-4 w-4 text-white/50" />
                     </div>
                     <input
-                      {...register('confirmPassword')}
-                      type={showConfirmPassword ? 'text' : 'password'}
+                      {...register("confirmPassword")}
+                      type={showConfirmPassword ? "text" : "password"}
                       placeholder="••••••••"
-                      className="w-full pl-10 pr-8 py-2 text-sm bg-white/5 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-white/50 focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/20 focus:outline-none transition-all"
+                      className="w-full pl-10 pr-10 py-3 bg-white/5 backdrop-blur-xl border border-white/20 rounded-xl text-white placeholder-white/50 focus:border-teal-400/50 focus:ring-2 focus:ring-teal-400/20 focus:outline-none transition-all duration-200 text-sm"
                       disabled={isSubmitting || isLoading}
                     />
                     <button
@@ -255,24 +356,31 @@ export default function RegisterPage() {
                       onClick={() => setShowConfirmPassword((s) => !s)}
                     >
                       {showConfirmPassword ? (
-                        <EyeOff className="h-4 w-4 text-white/50 hover:text-white/70" />
+                        <EyeOff className="h-4 w-4 text-white/50 hover:text-white/70 transition-colors" />
                       ) : (
-                        <Eye className="h-4 w-4 text-white/50 hover:text-white/70" />
+                        <Eye className="h-4 w-4 text-white/50 hover:text-white/70 transition-colors" />
                       )}
                     </button>
                   </div>
-                  {errors.confirmPassword && <p className="mt-1 text-xs text-red-300">{errors.confirmPassword.message}</p>}
+                  {errors.confirmPassword && (
+                    <p className="mt-1 text-xs text-red-300">
+                      {errors.confirmPassword.message}
+                    </p>
+                  )}
                 </div>
 
+                {/* Role Field */}
                 <div>
-                  <label className="block text-white/90 text-xs font-medium mb-1">Role</label>
+                  <label className="block text-white/90 text-sm font-medium mb-2">
+                    Role
+                  </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      {getRoleIcon('employee')}
+                      {getRoleIcon("employee")}
                     </div>
                     <select
-                      {...register('role')}
-                      className="w-full pl-10 pr-8 py-2 text-sm appearance-none bg-white/5 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-white/50 focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/20 focus:outline-none transition-all"
+                      {...register("role")}
+                      className="w-full pl-10 pr-8 py-3 text-sm appearance-none bg-white/5 backdrop-blur-xl border border-white/20 rounded-xl text-white placeholder-white/50 focus:border-teal-400/50 focus:ring-2 focus:ring-teal-400/20 focus:outline-none transition-all duration-200"
                       disabled={isSubmitting || isLoading}
                     >
                       <option value="employee" className="bg-slate-800">Employee</option>
@@ -285,10 +393,11 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
+                {/* Submit Button */}
                 <button
                   type="submit"
                   disabled={isSubmitting || isLoading}
-                  className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg shadow-md hover:shadow-lg transition-all text-sm flex items-center justify-center gap-2"
+                  className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 flex items-center justify-center gap-2 text-sm"
                 >
                   {isSubmitting || isLoading ? (
                     <>
@@ -296,24 +405,26 @@ export default function RegisterPage() {
                       Creating account...
                     </>
                   ) : (
-                    'Register'
+                    "Register"
                   )}
                 </button>
-              </form>
+              </div>
 
+              {/* Sign In Link */}
               <div className="mt-6 text-center">
                 <p className="text-white/70 text-sm">
-                  Already have an account?{' '}
+                  Already have an account?{" "}
                   <Link
                     href="/login"
-                    className="text-teal-300 hover:text-teal-200 font-medium transition-colors"
+                    className="text-teal-300 hover:text-teal-200 font-semibold transition-colors"
                   >
                     Sign in
                   </Link>
                 </p>
               </div>
-            </div>
+            </form>
 
+            {/* Security Note */}
             <div className="mt-4 text-center">
               <p className="text-white/50 text-xs">
                 🔒 Your data is protected with enterprise-grade security

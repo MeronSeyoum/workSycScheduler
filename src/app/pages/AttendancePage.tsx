@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { format, subDays } from "date-fns";
 import {
   Clock,
@@ -13,7 +13,6 @@ import {
   InfoCircleOutlined,
 } from "@ant-design/icons";
 import { api } from "@/lib/api";
-import DateRangePicker from "@/components/ui/shift/DateRangePicker";
 import { Skeleton } from "@/components/ui/common/skeleton";
 import AttendanceStats from "@/components/ui/attendance/AttendanceStats";
 import RecentAttendanceTable from "@/components/ui/attendance/RecentAttendanceTable";
@@ -26,6 +25,8 @@ import { Employee } from "@/lib/types/employee";
 import { ManualEntryModal } from "@/components/modal/ManualEntryModal";
 import AttendanceSheet from "@/components/ui/attendance/attendanceSheet";
 import { AttendanceRecord, AttendanceSummary } from "@/lib/types/attendance";
+import { DateRange } from "@/lib/types/dashboard";
+import DateRangeAttendance from "@/components/ui/attendance/DateRangeAttendance";
 
 const useNotification = () => {
   const [api, contextHolder] = notification.useNotification();
@@ -65,9 +66,9 @@ export default function AttendancePage() {
     "overview" | "charts" | "timesheets"
   >("overview");
 
-  const [dateRange, setDateRange] = useState({
-    start: subDays(new Date(), 7),
-    end: new Date(),
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: subDays(new Date(), 7),
+    to: new Date(),
   });
   const [loading, setLoading] = useState({
     summary: true,
@@ -113,23 +114,23 @@ export default function AttendancePage() {
       setLoading({ summary: true, recent: true, charts: true });
 
       console.log("Fetching data for date range:", {
-        start: format(dateRange.start, "yyyy-MM-dd"),
-        end: format(dateRange.end, "yyyy-MM-dd"),
+        start: format(dateRange.from, "yyyy-MM-dd"),
+        end: format(dateRange.to, "yyyy-MM-dd"),
       });
 
       const [summaryResponse, recentResponse, recentAttendanceSheetResponse, chartResponse] =
         await Promise.allSettled([
           api.attendanceService.fetchAttendanceSummary(
             {
-              startDate: format(dateRange.start, "yyyy-MM-dd"),
-              endDate: format(dateRange.end, "yyyy-MM-dd"),
+              startDate: format(dateRange.from, "yyyy-MM-dd"),
+              endDate: format(dateRange.to, "yyyy-MM-dd"),
             },
             token
           ),
           api.attendanceService.fetchRecentAttendance(
             {
-              startDate: format(dateRange.start, "yyyy-MM-dd"),
-              endDate: format(dateRange.end, "yyyy-MM-dd"),
+              startDate: format(dateRange.from, "yyyy-MM-dd"),
+              endDate: format(dateRange.to, "yyyy-MM-dd"),
               limit: 5,
             },
             token
@@ -137,15 +138,15 @@ export default function AttendancePage() {
 
           api.attendanceService.fetchRecentAttendance(
             {
-               startDate: format(dateRange.start, "yyyy-MM-dd"),
-              endDate: format(dateRange.end, "yyyy-MM-dd"),
+               startDate: format(dateRange.from, "yyyy-MM-dd"),
+              endDate: format(dateRange.to, "yyyy-MM-dd"),
               limit: 100,
             }, token
           ),
           api.attendanceService.fetchAttendanceChartData(
             {
-              startDate: format(dateRange.start, "yyyy-MM-dd"),
-              endDate: format(dateRange.end, "yyyy-MM-dd"),
+              startDate: format(dateRange.from, "yyyy-MM-dd"),
+              endDate: format(dateRange.to, "yyyy-MM-dd"),
             },
             token
           ),
@@ -175,9 +176,6 @@ export default function AttendancePage() {
       if (chartResponse.status === "rejected") {
         console.error("Chart data fetch failed:", chartResponse.reason);
       }
-
-      // Debug: Log the API responses
-  
 
       // Data is already transformed by the service layer
       const newAttendanceData = {
@@ -300,13 +298,18 @@ export default function AttendancePage() {
           </div>
 
           {/* Right-aligned controls */}
-          <div className="flex flex-co xs:flex-row gap-3 w-full sm:w-auto">
-            <DateRangePicker value={dateRange} onChange={setDateRange} />
-            <ManualEntryModal
+          <div className="flex lg:flex-row flex-col gap-3 w-full sm:w-auto items-start xs:items-center">
+        <ManualEntryModal
               employees={employees}
               onSuccess={fetchAttendanceData}
               locations={[]}
+            />   
+              <DateRangeAttendance
+              value={dateRange} 
+              onChange={setDateRange}
+              className="w-full xs:w-auto"
             />
+           
           </div>
         </div>
 

@@ -1,28 +1,151 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { useForm, SubmitHandler } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { useAuth } from '@/components/providers/AuthProvider';
-import { Lock, Mail, Eye, EyeOff, Clock, CheckCircle, Shield, Users } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { useForm, SubmitHandler } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useAuth } from "@/components/providers/AuthProvider";
+import {
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
+  Clock,
+  CheckCircle,
+  Shield,
+  Users,
+  BarChart3,
+  Calendar,
+  TrendingUp,
+  DollarSign,
+} from "lucide-react";
 
-// validation schema
+// Validation schema
 const schema = z.object({
-  email: z.string()
-    .min(1, 'Email is required')
-    .email('Please enter a valid email address'),
-  password: z.string()
-    .min(1, 'Password is required')
-    .min(6, 'Password must be at least 6 characters'),
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email("Please enter a valid email address"),
+  password: z
+    .string()
+    .min(1, "Password is required")
+    .min(6, "Password must be at least 6 characters"),
   rememberMe: z.boolean().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
 
+// Feature data
+const features = [
+  {
+    icon: <Users className="w-5 h-5 lg:w-6 lg:h-6 text-teal-300" />,
+    title: "Complete Employee Management",
+    description:
+      "Manage profiles, roles, permissions, and schedules in one centralized dashboard. Track performance metrics and maintain detailed employee records with advanced filtering and search capabilities.",
+    tags: ["Role-based access", "Performance analytics", "Document management"],
+    color: "teal",
+  },
+  {
+    icon: <Shield className="w-5 h-5 lg:w-6 lg:h-6 text-cyan-300" />,
+    title: "Enterprise-Grade Security",
+    description:
+      "Multi-layered security with end-to-end encryption, two-factor authentication, and role-based access controls. SOC 2 compliant with regular security audits and real-time threat detection.",
+    tags: [
+      "2FA & MFA",
+      "End-to-end encryption",
+      "GDPR compliant",
+      "Audit logs",
+    ],
+    color: "cyan",
+  },
+  {
+    icon: <CheckCircle className="w-5 h-5 lg:w-6 lg:h-6 text-green-300" />,
+    title: "Real-time Workforce Tracking",
+    description:
+      "Live monitoring of attendance, location, and productivity with GPS verification and QR code check-ins. Receive instant notifications and generate comprehensive reports for payroll and compliance.",
+    tags: [
+      "GPS geofencing",
+      "QR attendance",
+      "Live dashboard",
+      "Automated reports",
+    ],
+    color: "green",
+  },
+  {
+    icon: <BarChart3 className="w-5 h-5 lg:w-6 lg:h-6 text-blue-300" />,
+    title: "Advanced Analytics & Reporting",
+    description:
+      "Comprehensive business intelligence with customizable dashboards, trend analysis, and predictive insights. Export data in multiple formats and integrate with your existing business tools.",
+    tags: [
+      "Custom reports",
+      "Data export",
+      "API integration",
+      "Trend analysis",
+    ],
+    color: "blue",
+  },
+  {
+    icon: <Calendar className="w-5 h-5 lg:w-6 lg:h-6 text-purple-300" />,
+    title: "Smart Scheduling & Automation",
+    description:
+      "Intelligent shift planning with conflict detection, availability tracking, and automated shift assignments. Reduce scheduling time by 75% with AI-powered recommendations and pattern recognition.",
+    tags: [
+      "Auto-scheduling",
+      "Conflict detection",
+      "Shift swapping",
+      "Mobile access",
+    ],
+    color: "purple",
+  },
+];
+
+// Custom icons for features
+const FeatureIcon = ({
+  icon,
+  color,
+}: {
+  icon: React.ReactNode;
+  color: string;
+}) => (
+  <div
+    className={`w-10 h-10 lg:w-12 lg:h-12 bg-${color}-500/20 backdrop-blur-xl rounded-lg lg:rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}
+  >
+    {icon}
+  </div>
+);
+
+const FeatureTag = ({ tag, color }: { tag: string; color: string }) => (
+  <span
+    className={`inline-block bg-${color}-500/20 text-${color}-300 text-[10px] lg:text-xs px-2 py-1 rounded-full`}
+  >
+    {tag}
+  </span>
+);
+
+// Feature Card Component
+const FeatureCard = ({ feature }: { feature: (typeof features)[0] }) => (
+  <div
+    className={`flex items-start gap-4 p-4 lg:p-6 bg-white/5 backdrop-blur-xl rounded-xl lg:rounded-2xl border border-white/10 hover:border-${feature.color}-400/30 transition-all duration-300 group`}
+  >
+    <FeatureIcon icon={feature.icon} color={feature.color} />
+    <div className="flex-1 min-w-0">
+      <h3 className="text-white font-semibold text-sm lg:text-base mb-1 lg:mb-2">
+        {feature.title}
+      </h3>
+      <p className="text-white/70 text-xs lg:text-sm leading-relaxed">
+        {feature.description}
+      </p>
+      <div className="mt-2 flex flex-wrap gap-1">
+        {feature.tags.map((tag, index) => (
+          <FeatureTag key={index} tag={tag} color={feature.color} />
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
 export default function LoginPage() {
   const { signIn, isLoading: authLoading, error: authError } = useAuth();
-
   const [apiError, setApiError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,14 +156,16 @@ export default function LoginPage() {
     formState: { errors, isValid },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    mode: 'onChange',
-    defaultValues: { email: '', password: '', rememberMe: false },
+    mode: "onChange",
+    defaultValues: { email: "", password: "", rememberMe: false },
   });
 
   useEffect(() => {
     if (authError) {
-      // authError might be an Error or a custom object; handle gracefully
-      const msg = (authError as any)?.message || String(authError) || 'An error occurred during login';
+      const msg =
+        (authError as any)?.message ||
+        String(authError) ||
+        "An error occurred during login";
       setApiError(msg);
       setIsSubmitting(false);
     }
@@ -52,10 +177,9 @@ export default function LoginPage() {
 
     try {
       await signIn(data.email, data.password);
-      // if signIn does not throw, consider login successful
     } catch (err) {
-      console.error('Login error:', err);
-      setApiError('Login failed. Please check your credentials and try again.');
+      console.error("Login error:", err);
+      setApiError("Login failed. Please check your credentials and try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -63,139 +187,144 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900 relative overflow-hidden">
-      <div className="absolute inset-0">
-        <div className="absolute top-20 -right-32 w-96 h-96 rounded-full bg-gradient-to-br from-teal-400/15 via-cyan-300/10 to-blue-400/8 backdrop-blur-3xl border border-white/5 shadow-2xl"></div>
-        <div className="absolute bottom-20 -left-32 w-80 h-80 bg-gradient-to-tr from-teal-300/20 via-emerald-200/10 to-cyan-300/15 backdrop-blur-3xl rounded-full border border-white/5 shadow-2xl"></div>
-        <div className="absolute top-1/2 left-1/3 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-blue-200/10 via-teal-200/15 to-cyan-200/10 backdrop-blur-3xl rounded-3xl border border-white/5 shadow-xl rotate-45"></div>
-        <div className="absolute top-1/4 right-1/4 w-40 h-40 bg-gradient-to-bl from-teal-300/15 to-cyan-200/10 backdrop-blur-2xl rounded-full border border-white/5 shadow-lg"></div>
-        <div className="absolute bottom-1/4 left-1/4 w-48 h-48 bg-gradient-to-tr from-blue-300/10 to-teal-300/15 backdrop-blur-2xl rounded-2xl border border-white/5 shadow-lg rotate-12"></div>
+      {/* Background Elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 -right-20 w-80 h-80 lg:w-96 lg:h-96 rounded-full bg-gradient-to-br from-teal-400/10 via-cyan-300/8 to-blue-400/5 backdrop-blur-2xl"></div>
+        <div className="absolute bottom-1/4 -left-20 w-72 h-72 lg:w-80 lg:h-80 bg-gradient-to-tr from-teal-300/15 via-emerald-200/8 to-cyan-300/10 backdrop-blur-2xl rounded-full"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-blue-200/8 via-teal-200/10 to-cyan-200/6 backdrop-blur-2xl rounded-3xl rotate-45"></div>
       </div>
 
-      <div className="relative z-10 min-h-screen flex">
-        <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-12">
-          <div className="max-w-lg">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-16 h-16 bg-gradient-to-br from-teal-400 to-teal-600 rounded-3xl flex items-center justify-center shadow-2xl">
-                <Clock className="w-9 h-9 text-white" />
+      <div className="relative z-10 min-h-screen flex max-w-7xl mx-auto gap-10 ">
+        {/* Left Panel - Features */}
+        <div className="hidden lg:flex lg:w-1/2 items-center justify-center gap-4 py-8 sm:py-12 lg:py-12">
+          <div className="w-full max-w-2xl">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <Clock className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">WorkSync</h1>
-                <p className="text-teal-200">Admin Dashboard</p>
+                <h1 className="text-2xl font-bold text-white">WorkSync</h1>
+                <p className="text-teal-200 text-sm">Admin Dashboard</p>
               </div>
             </div>
 
-            <div className="mb-12">
-              <h2 className="text-4xl font-bold text-white mb-6">Welcome Back</h2>
-              <p className="text-white/80 text-lg leading-relaxed">
-                Access your workforce management dashboard and streamline your business operations with ease.
+            <div className="mb-6">
+              <p className="text-white/80 text-sm leading-relaxed">
+                Access your workforce management dashboard and streamline your
+                business operations.
               </p>
             </div>
 
-            <div className="space-y-6">
-              <div className="flex items-center gap-4 p-4 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10">
-                <div className="w-12 h-12 bg-teal-500/20 backdrop-blur-xl rounded-xl flex items-center justify-center">
-                  <Users className="w-6 h-6 text-teal-300" />
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold">Employee Management</h3>
-                  <p className="text-white/70 text-sm">Complete control over your workforce</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 p-4 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10">
-                <div className="w-12 h-12 bg-cyan-500/20 backdrop-blur-xl rounded-xl flex items-center justify-center">
-                  <Shield className="w-6 h-6 text-cyan-300" />
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold">Secure Access</h3>
-                  <p className="text-white/70 text-sm">Advanced security and data protection</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 p-4 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10">
-                <div className="w-12 h-12 bg-green-500/20 backdrop-blur-xl rounded-xl flex items-center justify-center">
-                  <CheckCircle className="w-6 h-6 text-green-300" />
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold">Real-time Tracking</h3>
-                  <p className="text-white/70 text-sm">Live attendance and location monitoring</p>
-                </div>
-              </div>
+            {/* Features Grid */}
+            <div className="space-y-4 max-h-auto pr-2">
+              {features.map((feature, index) => (
+                <FeatureCard key={index} feature={feature} />
+              ))}
             </div>
           </div>
         </div>
 
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
-          <div className="w-full max-w-md">
-            <div className="lg:hidden flex items-center justify-center gap-3 mb-12">
-              <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 rounded-2xl flex items-center justify-center shadow-xl">
-                <Clock className="w-7 h-7 text-white" />
+        {/* Right Panel - Login Form */}
+        <div className="w-full lg:w-1/2 flex-col items-center justify-center p-4 lg:p-10 ">
+       <div className="hidden lg:flex items-center gap-3 mb-4 lg:pt-16">
+  <h2 className="text-3xl font-bold text-white mb-4">Welcome Back</h2>
+</div>
+          <div className="w-full max-w-lg">
+            {/* Mobile Header */}
+            <div className="lg:hidden flex items-center justify-center gap-3 lg:pt-0 pt-20 mb-8">
+              <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Clock className="w-5 h-5 text-white" />
               </div>
-              <span className="text-2xl font-bold text-white">WorkSync</span>
+              <span className="text-xl font-bold text-white">WorkSync</span>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="bg-white/10 backdrop-blur-2xl rounded-3xl p-8 border border-white/20 shadow-2xl">
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-white mb-2">Sign In</h2>
-                <p className="text-white/70">Enter your credentials to access your dashboard</p>
+            {/* Login Form */}
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="bg-white/10 backdrop-blur-2xl rounded-2xl p-6 border border-white/20 shadow-xl"
+            >
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-white mb-2">Sign In</h2>
+                <p className="text-white/70 text-sm">
+                  Enter your credentials to access your dashboard
+                </p>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-4">
+                {/* Email Field */}
                 <div>
-                  <label className="block text-white/90 text-sm font-medium mb-2">Email Address</label>
+                  <label className="block text-white/90 text-sm font-medium mb-2">
+                    Email Address
+                  </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Mail className="h-5 w-5 text-white/50" />
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Mail className="h-4 w-4 text-white/50" />
                     </div>
                     <input
-                      {...register('email')}
+                      {...register("email")}
                       type="email"
                       placeholder="your@email.com"
-                      className="w-full pl-12 pr-4 py-4 bg-white/5 backdrop-blur-xl border border-white/20 rounded-2xl text-white placeholder-white/50 focus:border-teal-400/50 focus:ring-2 focus:ring-teal-400/20 focus:outline-none transition-all duration-300"
+                      className="w-full pl-10 pr-4 py-3 bg-white/5 backdrop-blur-xl border border-white/20 rounded-xl text-white placeholder-white/50 focus:border-teal-400/50 focus:ring-2 focus:ring-teal-400/20 focus:outline-none transition-all duration-200 text-sm"
                       disabled={isSubmitting || authLoading}
                     />
                   </div>
-                  {errors.email && <p className="mt-2 text-xs text-red-300">{errors.email.message}</p>}
+                  {errors.email && (
+                    <p className="mt-1 text-xs text-red-300">
+                      {errors.email.message}
+                    </p>
+                  )}
                 </div>
 
+                {/* Password Field */}
                 <div>
-                  <label className="block text-white/90 text-sm font-medium mb-2">Password</label>
+                  <label className="block text-white/90 text-sm font-medium mb-2">
+                    Password
+                  </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-white/50" />
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock className="h-4 w-4 text-white/50" />
                     </div>
                     <input
-                      {...register('password')}
-                      type={showPassword ? 'text' : 'password'}
+                      {...register("password")}
+                      type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
-                      className="w-full pl-12 pr-12 py-4 bg-white/5 backdrop-blur-xl border border-white/20 rounded-2xl text-white placeholder-white/50 focus:border-teal-400/50 focus:ring-2 focus:ring-teal-400/20 focus:outline-none transition-all duration-300"
+                      className="w-full pl-10 pr-10 py-3 bg-white/5 backdrop-blur-xl border border-white/20 rounded-xl text-white placeholder-white/50 focus:border-teal-400/50 focus:ring-2 focus:ring-teal-400/20 focus:outline-none transition-all duration-200 text-sm"
                       disabled={isSubmitting || authLoading}
                     />
                     <button
                       type="button"
-                      className="absolute inset-y-0 right-0 pr-4 flex items-center"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
                       onClick={() => setShowPassword((s) => !s)}
                     >
                       {showPassword ? (
-                        <EyeOff className="h-5 w-5 text-white/50 hover:text-white/70 transition-colors" />
+                        <EyeOff className="h-4 w-4 text-white/50 hover:text-white/70 transition-colors" />
                       ) : (
-                        <Eye className="h-5 w-5 text-white/50 hover:text-white/70 transition-colors" />
+                        <Eye className="h-4 w-4 text-white/50 hover:text-white/70 transition-colors" />
                       )}
                     </button>
                   </div>
-                  {errors.password && <p className="mt-2 text-xs text-red-300">{errors.password.message}</p>}
+                  {errors.password && (
+                    <p className="mt-1 text-xs text-red-300">
+                      {errors.password.message}
+                    </p>
+                  )}
                 </div>
 
+                {/* Remember Me & Forgot Password */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <input
-                      {...register('rememberMe')}
+                      {...register("rememberMe")}
                       id="rememberMe"
                       type="checkbox"
                       className="h-4 w-4 text-teal-500 bg-white/10 border-white/30 rounded focus:ring-teal-400/20 focus:ring-2"
                       disabled={isSubmitting || authLoading}
                     />
-                    <label htmlFor="rememberMe" className="ml-3 text-sm text-white/80">
+                    <label
+                      htmlFor="rememberMe"
+                      className="ml-2 text-sm text-white/80"
+                    >
                       Remember me
                     </label>
                   </div>
@@ -207,27 +336,34 @@ export default function LoginPage() {
                   </a>
                 </div>
 
-                {apiError && <p className="text-center text-sm text-red-300">{apiError}</p>}
+                {/* Error Message */}
+                {apiError && (
+                  <p className="text-center text-sm text-red-300 py-2">
+                    {apiError}
+                  </p>
+                )}
 
+                {/* Submit Button */}
                 <button
                   type="submit"
                   disabled={isSubmitting || authLoading || !isValid}
-                  className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-0.5 flex items-center justify-center gap-3"
+                  className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 flex items-center justify-center gap-2 text-sm"
                 >
                   {isSubmitting || authLoading ? (
                     <>
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                       Signing in...
                     </>
                   ) : (
-                    'Sign In'
+                    "Sign In"
                   )}
                 </button>
               </div>
 
-              <div className="mt-8 text-center">
-                <p className="text-white/70">
-                  Don&apos;t have an account?{' '}
+              {/* Sign Up Link */}
+              <div className="mt-6 text-center">
+                <p className="text-white/70 text-sm">
+                  Don&apos;t have an account?{" "}
                   <a
                     href="/register"
                     className="text-teal-300 hover:text-teal-200 font-semibold transition-colors"
@@ -238,8 +374,9 @@ export default function LoginPage() {
               </div>
             </form>
 
-            <div className="mt-6 text-center">
-              <p className="text-white/50 text-sm">
+            {/* Security Note */}
+            <div className="mt-4 text-center">
+              <p className="text-white/50 text-xs">
                 🔒 Your data is protected with enterprise-grade security
               </p>
             </div>
@@ -249,7 +386,6 @@ export default function LoginPage() {
     </div>
   );
 }
-
 
 // 'use client';
 

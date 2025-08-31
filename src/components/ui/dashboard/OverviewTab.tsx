@@ -5,6 +5,7 @@ import {
   Clock,
   CalendarDays,
   CheckCircle,
+  ChevronRight,
 } from "lucide-react";
 import { StatCard } from "./StatCard";
 import { ChartCard } from "./ChartCard";
@@ -18,7 +19,6 @@ interface OverviewTabProps {
   stats: DashboardResponse["stats"];
   shifts: DashboardResponse["shifts"];
   clients: DashboardResponse["clients"];
-  // employees: DashboardResponse["employees"];
   dateRange: { from: Date; to: Date };
 }
 
@@ -26,7 +26,6 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   stats,
   shifts,
   clients,
-  // employees,
   dateRange,
 }) => {
   // Memoize upcoming shifts calculation
@@ -75,36 +74,36 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   }, [shifts, clients]);
 
   return (
-    <>
+    <div className="space-y-4 md:space-y-6">
       {/* Stat Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <StatCard
-          title="Total Employees"
+          title="Employees"
           value={stats.totalEmployees}
-          icon={<Users className="h-6 w-6 text-blue-600" />}
+          icon={<Users className="h-4 w-4 md:h-5 md:w-5 text-blue-600" />}
           change={stats.totalEmployees - stats.prevPeriodStats.totalEmployees}
           bgColor="bg-blue-100"
         />
 
         <StatCard
-          title="Active Clients"
+          title="Clients"
           value={stats.activeClients}
-          icon={<Briefcase className="h-6 w-6 text-green-600" />}
+          icon={<Briefcase className="h-4 w-4 md:h-5 md:w-5 text-green-600" />}
           change={stats.activeClients - stats.prevPeriodStats.activeClients}
           bgColor="bg-green-100"
         />
 
         <StatCard
-          title="Upcoming Shifts"
+          title="Upcoming"
           value={stats.upcomingShifts}
-          icon={<Clock className="h-6 w-6 text-purple-600" />}
+          icon={<Clock className="h-4 w-4 md:h-5 md:w-5 text-purple-600" />}
           secondaryValue={upcomingShiftsNext7Days}
-          secondaryLabel="Next 7 days"
+          secondaryLabel="7 days"
           bgColor="bg-purple-100"
         />
-         {/* Completion Rate Stat Card */}
+        
         <StatCard
-          title="Completion Rate"
+          title="Completion"
           bgColor="bg-white"
           completionRate={{
             completed: stats.completedShifts,
@@ -112,53 +111,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             prevCompleted: stats.prevPeriodStats.completedShifts
           }}
         />
-{/* 
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">
-                Completion Rate
-              </p>
-              <p className="text-2xl font-bold mt-1 text-teal-700">
-                {shifts.length
-                  ? Math.round((stats.completedShifts / shifts.length) * 100)
-                  : 0}
-                %
-              </p>
-            </div>
-            <CompletionRateIcon
-              completed={stats.completedShifts}
-              total={shifts.length}
-            />
-          </div>
-          <div className="mt-2 text-sm text-gray-500">
-            {stats.completedShifts} of {shifts.length} shifts
-            {stats.prevPeriodStats.completedShifts > 0 && (
-              <span
-                className={`ml-2 ${
-                  stats.completedShifts > stats.prevPeriodStats.completedShifts
-                    ? "text-green-500"
-                    : "text-red-500"
-                }`}
-              >
-                (
-                {stats.completedShifts - stats.prevPeriodStats.completedShifts >
-                0
-                  ? "+"
-                  : ""}
-                {stats.completedShifts - stats.prevPeriodStats.completedShifts}{" "}
-                from previous period)
-              </span>
-            )}
-          </div>
-        </div> */}
-      
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-        {/* Left Column */}
-        <div className="lg:col-span-2 space-y-6 h-64">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6">
+        {/* Left Column - Charts */}
+        <div className="xl:col-span-2 space-y-4 md:space-y-6">
           <ChartCard
             title="Shift Activity Over Time"
             dateRange={`${dateRange.from.toLocaleDateString()} - ${dateRange.to.toLocaleDateString()}`}
@@ -167,13 +125,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           </ChartCard>
 
           {/* Recent Activity */}
-          <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+          <div className="bg-white p-3 md:p-4 rounded-lg shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-md font-semibold text-gray-800">
+              <h2 className="text-sm md:text-base font-semibold text-gray-800">
                 Recent Activity
               </h2>
-              <button className="text-xs text-blue-600 hover:text-blue-800">
-                View All
+              <button className="text-xs text-blue-600 hover:text-blue-800 flex items-center">
+                View All <ChevronRight className="h-3 w-3 ml-1" />
               </button>
             </div>
 
@@ -195,23 +153,29 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           </div>
         </div>
 
-        {/* Right Column */}
-        <div className="space-y-6">
-          <ChartCard title="Shift Completion Rate">
-            <SystemHealthChart shifts={shifts} />
+        {/* Right Column - Sidebar */}
+        <div className="space-y-4 md:space-y-6">
+           <ChartCard title="Shift Status" >
+            <div className="h-40 md:h-48">
+              <ShiftStatusChart shifts={shifts} />
+            </div>
           </ChartCard>
 
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h2 className="text-lg font-semibold mb-4">Top Clients</h2>
-            <TopClients clients={clients} shifts={shifts} />
+          <div className="bg-white p-3 md:p-4 rounded-lg shadow-sm border border-gray-100">
+            <h2 className="text-sm md:text-base font-semibold mb-3 md:mb-4">Top Clients</h2>
+            <TopClients clients={clients} shifts={shifts}  />
           </div>
 
-          <ChartCard title="Shift Status">
-              <ShiftStatusChart shifts={shifts} />
+         
+
+          <ChartCard title="Completion Rate" >
+            <div className="h-40 md:h-48">
+              <SystemHealthChart shifts={shifts} />
+            </div>
           </ChartCard>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
@@ -232,7 +196,7 @@ const ActivityItem = ({
         return "bg-green-500";
       case "scheduled":
         return "bg-blue-500";
-          case "missed":
+      case "missed":
         return "bg-red-400";
       default:
         return "bg-gray-400";
@@ -246,9 +210,8 @@ const ActivityItem = ({
         return "bg-green-100 text-green-800";
       case "scheduled":
         return "bg-blue-100 text-blue-800";
-        
-          case "missed":
-        return "bg-red-400 text-red-800";
+      case "missed":
+        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -261,7 +224,7 @@ const ActivityItem = ({
         <div className="w-px h-6 bg-gray-200 mt-1" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-slate-900 truncate">
+        <p className="text-xs md:text-sm font-semibold text-slate-900 truncate">
           {isShift
             ? `Shift at ${item.client?.business_name || "Unknown"}`
             : `New client: ${item.business_name || "Unknown"}`}
@@ -279,8 +242,8 @@ const ActivityItem = ({
             : item.contact_person || item.email || "No details"}
         </p>
         <div className="flex items-center text-xs text-gray-400 mt-0.5">
-          <CalendarDays className="h-3 w-3 mr-1" />
-          <span>
+          <CalendarDays className="h-3 w-3 mr-1 flex-shrink-0" />
+          <span className="truncate">
             {isShift
               ? `${new Date(item.date).toLocaleDateString()} • ${
                   item.start_time || ""
@@ -290,7 +253,7 @@ const ActivityItem = ({
         </div>
       </div>
       <div
-        className={`text-xs px-2 py-0.5 rounded-full ${getStatusBadgeClass()}`}
+        className={`text-xs px-2 py-0.5 rounded-full ${getStatusBadgeClass()} flex-shrink-0`}
       >
         {isShift ? status || "unknown" : "new client"}
       </div>
@@ -298,26 +261,3 @@ const ActivityItem = ({
   );
 };
 
-const CompletionRateIcon = ({
-  completed,
-  total,
-}: {
-  completed: number;
-  total: number;
-}) => {
-  const rate = total ? completed / total : 0;
-  const iconClass =
-    rate > 0.8
-      ? "text-green-600"
-      : rate > 0.5
-      ? "text-yellow-600"
-      : "text-red-600";
-  const bgClass =
-    rate > 0.8 ? "bg-green-100" : rate > 0.5 ? "bg-yellow-100" : "bg-red-100";
-
-  return (
-    <div className={`p-3 rounded-full ${bgClass}`}>
-      <CheckCircle className={`h-6 w-6 ${iconClass}`} />
-    </div>
-  );
-};
