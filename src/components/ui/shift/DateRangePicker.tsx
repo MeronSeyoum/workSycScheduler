@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
-import { DateRange } from 'react-date-range';
+import { DateRange, Range } from 'react-date-range';
 import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
 
@@ -16,13 +16,15 @@ interface DateRangePickerProps {
 export default function DateRangePicker({ value, onChange }: DateRangePickerProps) {
   const [showCalendar, setShowCalendar] = useState(false);
 
-  const handleSelect = (ranges: any) => {
+  const handleSelect = (ranges: { [key: string]: Range }) => {
     const { startDate, endDate } = ranges.selection;
-    onChange({ start: startDate, end: endDate });
-    setShowCalendar(false);
+    if (startDate && endDate) {
+      onChange({ start: startDate, end: endDate });
+      setShowCalendar(false);
+    }
   };
 
-  const selectionRange = {
+  const selectionRange: Range = {
     startDate: value.start,
     endDate: value.end,
     key: 'selection',

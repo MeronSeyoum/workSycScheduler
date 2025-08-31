@@ -93,10 +93,10 @@ const QRCodePreviewModal: React.FC<QRCodePreviewModalProps> = ({
                   <Tag color="blue">Never expires</Tag>}
               </Descriptions.Item>
               <Descriptions.Item label="Created Date">
-                {dayjs(qrCode?.createdAt).format('MMMM D, YYYY h:mm A')}
+                {dayjs(qrCode?.created_at).format('MMMM D, YYYY h:mm A')}
               </Descriptions.Item>
               <Descriptions.Item label="Last Updated">
-                {dayjs(qrCode?.updatedAt).format('MMMM D, YYYY h:mm A')}
+                {dayjs(qrCode?.updated_at).format('MMMM D, YYYY h:mm A')}
               </Descriptions.Item>
             </Descriptions>
           </Col>

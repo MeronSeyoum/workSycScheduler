@@ -120,27 +120,40 @@ const GeofencePage: React.FC = () => {
     setFilteredGeofences(results);
   }, [searchTerm, geofences]);
 
-  const handleFormSubmit = useCallback(async (values: Partial<Geofence>) => {
-    if (!token) return;
-    
-    setFormLoading(true);
-    try {
-      if (currentGeofence) {
-        await apiCall.geofence.api.geofence.update(currentGeofence.id, values as Geofence, token);
-        showNotification('success', 'Geofence updated successfully');
-      } else {
-        await apiCall.geofence.api.geofence.create(values as Omit<Geofence, 'id'>, token);
-        showNotification('success', 'Geofence created successfully');
-      }
-      setDrawerVisible(false);
-      await fetchGeofences();
-    } catch (error: any) {
-      const action = currentGeofence ? 'update' : 'create';
-      showNotification('error', `Failed to ${action} geofence`, error.message);
-    } finally {
-      setFormLoading(false);
+  const handleFormSubmit = useCallback(async (values: { 
+  client_id: number; 
+  latitude: string | number; 
+  longitude: string | number; 
+  radius_meters: number; 
+}) => {
+  if (!token) return;
+  
+  setFormLoading(true);
+  try {
+    // Convert latitude and longitude to numbers if they're strings
+    const processedValues: Partial<Geofence> = {
+      client_id: values.client_id,
+      latitude: typeof values.latitude === 'string' ? parseFloat(values.latitude) : values.latitude,
+      longitude: typeof values.longitude === 'string' ? parseFloat(values.longitude) : values.longitude,
+      radius_meters: values.radius_meters,
+    };
+
+    if (currentGeofence) {
+      await apiCall.geofence.api.geofence.update(currentGeofence.id, processedValues as Geofence, token);
+      showNotification('success', 'Geofence updated successfully');
+    } else {
+      await apiCall.geofence.api.geofence.create(processedValues as Omit<Geofence, 'id'>, token);
+      showNotification('success', 'Geofence created successfully');
     }
-  }, [currentGeofence, token, showNotification, fetchGeofences]);
+    setDrawerVisible(false);
+    await fetchGeofences();
+  } catch (error: any) {
+    const action = currentGeofence ? 'update' : 'create';
+    showNotification('error', `Failed to ${action} geofence`, error.message);
+  } finally {
+    setFormLoading(false);
+  }
+}, [currentGeofence, token, showNotification, fetchGeofences]);
 
   const handleDelete = useCallback(async (id: number) => {
     Modal.confirm({

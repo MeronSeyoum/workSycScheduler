@@ -32,7 +32,7 @@ export function ManualEntryModal({ employees, onSuccess }: ManualEntryModalProps
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  console.log("Employee", employees);
   const {
     register,
     handleSubmit,
@@ -125,7 +125,7 @@ export function ManualEntryModal({ employees, onSuccess }: ManualEntryModalProps
                   <option value="">Select Employee</option>
                   {employees.map((emp) => (
                     <option key={emp.id} value={emp.id}>
-                      {emp.name} ({emp.department})
+                      {emp.first_name} {emp.last_name} ({emp.position})
                     </option>
                   ))}
                 </select>
@@ -186,7 +186,7 @@ export function ManualEntryModal({ employees, onSuccess }: ManualEntryModalProps
               <div className="flex justify-end gap-2 pt-4">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="secondary"
                   onClick={() => {
                     reset();
                     setIsOpen(false);

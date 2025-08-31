@@ -17,19 +17,21 @@ export const fetchQRCodes = async (
 ): Promise<PaginatedResponse<QRCode>> => {
   const { page = 1, limit = 10, includeExpired = false } = options;
   
-  const response = await fetchWithAuth<PaginatedResponse<QRCode>>('/qrcodes', {
+  // Build query string
+  const queryParams = new URLSearchParams();
+  queryParams.append('page', page.toString());
+  queryParams.append('limit', limit.toString());
+  queryParams.append('include_expired', includeExpired.toString());
+  
+  const url = `/qrcodes?${queryParams.toString()}`;
+  
+  const response = await fetchWithAuth<PaginatedResponse<QRCode>>(url, {
     method: 'GET',
-    query: {
-      page: page.toString(),
-      limit: limit.toString(),
-      include_expired: includeExpired.toString()
-    }
   }, token);
-console.log("Qrcode from service ",response)
-
+  
+  console.log("QR code from service ", response);
   return response.data ?? { data: [], total: 0 };
 };
-
 
 export const getQRCodeById = async (id: number, token: string): Promise<QRCode> => {
   const response = await fetchWithAuth<QRCode>(`/qrcodes/${id}`, {
@@ -49,6 +51,9 @@ export const createQRCode = async (
 
   const response = await fetchWithAuth<QRCode>('/qrcodes', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(payload),
   }, token);
   return response.data!;
@@ -66,6 +71,9 @@ export const updateQRCode = async (
 
   const response = await fetchWithAuth<QRCode>(`/qrcodes/${id}`, {
     method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(payload),
   }, token);
   return response.data!;
@@ -77,12 +85,9 @@ export const deleteQRCode = async (id: number, token: string): Promise<void> => 
   }, token);
 };
 
-// src/services/qrcodeService.ts
-
 export const downloadQRCode = async (id: number, token: string): Promise<Blob> => {
   const response = await fetchWithAuth<Blob>(`/qrcodes/${id}/download`, {
     method: 'GET',
-    responseType: 'blob',
     headers: {
       'Accept': 'image/png',
     },
@@ -94,12 +99,16 @@ export const downloadQRCode = async (id: number, token: string): Promise<Blob> =
 
   return response.data;
 };
+
 export const validateQRCode = async (
   codeValue: string, 
   token: string
 ): Promise<QRCodeValidationResponse> => {
   const response = await fetchWithAuth<QRCodeValidationResponse>('/qrcodes/validate', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({ code_value: codeValue }),
   }, token);
   return response.data!;

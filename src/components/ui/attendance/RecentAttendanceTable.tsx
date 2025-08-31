@@ -9,21 +9,7 @@ import {
 import { Badge } from '@/components/ui/common/badge';
 import { Clock, MapPin, User, Calendar, Check, X, Clock as ClockIcon } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
-
-interface AttendanceRecord {
-  id: number;
-  employeeId: number;
-  employeeName: string;
-  employeeCode: string;
-  date: string;
-  clockIn: string;
-  clockOut: string | null;
-  status: 'present' | 'late' | 'absent' | 'early';
-  hoursWorked: number | null;
-  shiftType: string;
-  location: string | null;
-  method: 'geofence' | 'qrcode' | 'manual';
-}
+import { AttendanceRecord } from '@/lib/types/attendance';
 
 interface RecentAttendanceTableProps {
   data: AttendanceRecord[];
@@ -38,13 +24,36 @@ export default function RecentAttendanceTable({ data = [] }: RecentAttendanceTab
     }
   };
 
+  // Sort data by date in descending order (newest first)
+  const sortedData = [...data].sort((a, b) => {
+    try {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      return dateB - dateA; // Descending order (newest first)
+    } catch {
+      return 0; // If date parsing fails, maintain original order
+    }
+  });
+
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'present': return <Badge variant="success"><Check className="h-3 w-3 mr-1" /> Present</Badge>;
-      case 'late': return <Badge variant="warning"><ClockIcon className="h-3 w-3 mr-1" /> Late</Badge>;
-      case 'absent': return <Badge variant="destructive"><X className="h-3 w-3 mr-1" /> Absent</Badge>;
-      case 'early': return <Badge variant="secondary"><ClockIcon className="h-3 w-3 mr-1" /> Early</Badge>;
-      default: return <Badge variant="outline">Unknown</Badge>;
+      case 'present': 
+      case 'present': 
+        return <Badge variant="success"><Check className="h-3 w-3 mr-1" /> Present</Badge>;
+      case 'late': 
+      case 'late_arrival': 
+        return <Badge variant="warning"><ClockIcon className="h-3 w-3 mr-1" /> Late</Badge>;
+      case 'absent': 
+        return <Badge variant="destructive"><X className="h-3 w-3 mr-1" /> Absent</Badge>;
+      case 'early': 
+      case 'early_departure': 
+        return <Badge variant="secondary"><ClockIcon className="h-3 w-3 mr-1" /> Early</Badge>;
+      case 'on_leave': 
+        return <Badge variant="outline" className="bg-purple-100 text-purple-800">On Leave</Badge>;
+      case 'partial_attendance': 
+        return <Badge variant="outline" className="bg-amber-100 text-amber-800">Partial</Badge>;
+      default: 
+        return <Badge variant="outline">Unknown</Badge>;
     }
   };
 
@@ -71,26 +80,26 @@ export default function RecentAttendanceTable({ data = [] }: RecentAttendanceTab
       <TableHeader>
         <TableRow className='bg-gray-100 border border-gray-200'>
           <TableHead>Employee</TableHead>
-          <TableHead>Date</TableHead>
-          <TableHead>Clock In</TableHead>
-          <TableHead>Clock Out</TableHead>
-          <TableHead>Hours</TableHead>
+          <TableHead className="whitespace-nowrap">Date</TableHead>
+          <TableHead className="whitespace-nowrap">Clock In</TableHead>
+          <TableHead className="whitespace-nowrap">Clock Out</TableHead>
+          <TableHead className="whitespace-nowrap">Hours</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Location</TableHead>
           <TableHead>Method</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {data.length > 0 ? data.map((record) => (
+        {sortedData.length > 0 ? sortedData.map((record) => (
           <TableRow key={record.id} className='border border-gray-200'>
-            <TableCell className="font-medium ">
+            <TableCell className="font-medium">
               <div className="flex items-center gap-2">
-                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-gray-100 text-sm">
+                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-teal-100 text-sm">
                   {getInitials(record.employeeName)}
                 </div>
                 <div>
-                  <div>{record.employeeName}</div>
-                  <div className="text-sm text-muted-foreground">{record.employeeCode}</div>
+                  <div className='font-medium text-sm'>{record.employeeName}</div>
+                  <div className="text-xs text-gray-500">{record.employeeCode}</div>
                 </div>
               </div>
             </TableCell>

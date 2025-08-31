@@ -59,7 +59,7 @@ const QRCodePreviewModal: React.FC<QRCodePreviewModalProps> = ({
         >
           <Image
             width={180}
-            src={qrCode.qr_code_image || `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrCode.code_value}`}
+            src={ `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrCode.code_value}`}
             alt={qrCode.code_value}
             preview={false}
           />
@@ -102,7 +102,7 @@ const QRCodePreviewModal: React.FC<QRCodePreviewModalProps> = ({
 
       <Descriptions column={2} size="small" bordered>
         <Descriptions.Item label="Created Date">
-          {dayjs(qrCode.createdAt).format('MMMM D, YYYY')}
+          {dayjs(qrCode.created_at).format('MMMM D, YYYY')}
         </Descriptions.Item>
         <Descriptions.Item label="Expiration Date">
           {qrCode.expires_at ? (

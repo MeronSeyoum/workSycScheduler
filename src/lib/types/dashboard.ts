@@ -9,7 +9,7 @@ interface User {
 }
 
 // Employee types
-interface Employee {
+export interface Employee {
   id: number;
   code: string;
   position: string;
@@ -30,7 +30,7 @@ interface Attendance {
 }
 
 // Employee Shift types
-interface EmployeeShift {
+ interface EmployeeShift {
   id: number;
   employee: Employee;
   status: string;
@@ -131,12 +131,18 @@ export const COLORS = {
   inactive: "#FF8042",
 };
 
-export type AlertItem = {
-  type: "missed_shift" | "on_leave" | "pending_shift" | "client_on_hold";
+export type AlertType = "missed_shift" | "on_leave" | "pending_shift" | "client_on_hold";
+export type AlertPriority = "high" | "medium" | "low" | "needs_review" | "needs_followup";
+
+export interface AlertItem {
+  type: AlertType;
   title: string;
-  priority: "high" | "medium" | "needs_review" | "needs_followup";
-  content: any;
-};
+  priority: AlertPriority;
+  content: {
+    // Define content structure based on your needs
+    [key: string]: any;
+  };
+}
 
 export type StatCardProps = {
   title: string;

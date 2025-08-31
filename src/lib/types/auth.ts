@@ -33,8 +33,10 @@ export interface AuthResponse {
   };
 }
 
+// src/lib/types/auth.ts (or wherever ApiResponse is defined)
 export interface ApiResponse<T> {
   message?: string;
   data?: T;
   statusCode?: number;
+  status?: number; // Add status property
 }

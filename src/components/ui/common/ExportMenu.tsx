@@ -2,14 +2,26 @@
 
 import { useState } from 'react';
 import { Download, FileText, Sheet } from 'lucide-react';
-import  Button  from './Button';
+import Button from './Button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from './dropdown-menu';
-import { type ClockInOutLog } from '@/lib/types/shift';
+
+// Define the interface locally
+interface ClockInOutLog {
+  employeeName: string;
+  clockIn: string | Date;
+  clockOut?: string | Date;
+  duration?: number;
+  status: 'active' | 'completed' | 'cloked-out'; // Add possible status values
+  location?: {
+    lat: number;
+    lng: number;
+  };
+}
 
 interface ExportMenuProps {
   logs?: ClockInOutLog[];
@@ -51,7 +63,7 @@ export function ExportMenu({ logs = [] }: ExportMenuProps) {
 
   const exportToPDF = () => {
     setIsExporting(true);
-    // In a real app, you would use a library like jsPDF or PDFKit
+    // PDF export implementation would go here
     console.log('PDF export would be implemented here');
     setTimeout(() => setIsExporting(false), 1000);
   };

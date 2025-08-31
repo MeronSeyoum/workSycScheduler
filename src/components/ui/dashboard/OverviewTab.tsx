@@ -102,7 +102,17 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           secondaryLabel="Next 7 days"
           bgColor="bg-purple-100"
         />
-
+         {/* Completion Rate Stat Card */}
+        <StatCard
+          title="Completion Rate"
+          bgColor="bg-white"
+          completionRate={{
+            completed: stats.completedShifts,
+            total: shifts.length,
+            prevCompleted: stats.prevPeriodStats.completedShifts
+          }}
+        />
+{/* 
         <div className="bg-white p-4 rounded-lg shadow">
           <div className="flex items-center justify-between">
             <div>
@@ -141,7 +151,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               </span>
             )}
           </div>
-        </div>
+        </div> */}
+      
       </div>
 
       {/* Main Content */}
@@ -186,7 +197,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
         {/* Right Column */}
         <div className="space-y-6">
-          <ChartCard title="System Health">
+          <ChartCard title="Shift Completion Rate">
             <SystemHealthChart shifts={shifts} />
           </ChartCard>
 
@@ -219,8 +230,10 @@ const ActivityItem = ({
     switch (status) {
       case "completed":
         return "bg-green-500";
-      case "active":
+      case "scheduled":
         return "bg-blue-500";
+          case "missed":
+        return "bg-red-400";
       default:
         return "bg-gray-400";
     }
@@ -231,8 +244,11 @@ const ActivityItem = ({
     switch (status) {
       case "completed":
         return "bg-green-100 text-green-800";
-      case "active":
+      case "scheduled":
         return "bg-blue-100 text-blue-800";
+        
+          case "missed":
+        return "bg-red-400 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -245,7 +261,7 @@ const ActivityItem = ({
         <div className="w-px h-6 bg-gray-200 mt-1" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-teal-700 truncate">
+        <p className="text-sm font-semibold text-slate-900 truncate">
           {isShift
             ? `Shift at ${item.client?.business_name || "Unknown"}`
             : `New client: ${item.business_name || "Unknown"}`}

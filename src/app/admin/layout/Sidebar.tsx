@@ -63,7 +63,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4.25 border-b border-teal-200">
+      <div className="flex items-center justify-between p-4.25 border-b border-gray-300">
         {!collapsed && (
           <Link href="/admin/dashboard" className="flex items-center gap-2">
             <div className="bg-teal-700 p-1 rounded-lg">
@@ -94,7 +94,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
                 className={cn(
                   'flex items-center p-3 rounded-lg text-sm gap-3 hover:bg-teal-50 transition border border-transparent hover:border-teal-200',
                   isActive(item.href)
-                    ? 'bg-teal-100 text-teal-700 font-medium border-teal-300'
+                    ? 'bg-teal-100 text-teal-700 font-medium border-gray-300'
                     : 'text-slate-700',
                   collapsed && 'justify-center'
                 )}

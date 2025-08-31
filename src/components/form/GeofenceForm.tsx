@@ -8,6 +8,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Controller } from 'react-hook-form';
 
+
+type FormValues = z.input<typeof formSchema>;
 // Update your zod schema:
 const formSchema = z.object({
   client_id: z.number().min(1, {
@@ -57,8 +59,6 @@ const formSchema = z.object({
     message: 'Radius must be at most 5000 meters.',
   }),
 });
-
-type FormValues = z.infer<typeof formSchema>;
 
 interface Client {
   id: number;

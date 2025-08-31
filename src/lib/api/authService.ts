@@ -1,9 +1,9 @@
 // src/services/authService.ts
 import { fetchWithAuth } from './apiBase';
-import { User } from "@/lib/types/employee";
+import { User } from "@/lib/types/user";
 
 export const login = async (email: string, password: string) => {
-  return fetchWithAuth<{
+  const response = await fetchWithAuth<{
     user: User;
     access: { token: string; expires: string };
     refresh: { token: string; expires: string };
@@ -11,6 +11,11 @@ export const login = async (email: string, password: string) => {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   });
+
+  // Debug: log the actual response
+  console.log('Login API response:', response);
+  
+  return response;
 };
 
 export const logout = async (token: string) => {

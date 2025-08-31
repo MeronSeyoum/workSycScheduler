@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import {
@@ -11,8 +17,6 @@ import {
   FaCalendarAlt,
   FaPrint,
   FaFileExport,
-  FaArrowLeft,
-  FaArrowRight,
 } from "react-icons/fa";
 import { MdDragIndicator } from "react-icons/md";
 import {
@@ -46,7 +50,7 @@ import {
 } from "@/lib/types/shift";
 import { Skeleton } from "@/components/ui/common/skeleton";
 
-// Configure dayjs plugins for date manipulation
+// Day.js extensions
 dayjs.extend(isBetween);
 dayjs.extend(customParseFormat);
 dayjs.extend(isSameOrBefore);
@@ -56,14 +60,7 @@ dayjs.extend(isoWeeksInYear);
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
-// =============================================
-// CONSTANTS AND CONFIGURATIONS
-// =============================================
-
-// Default time for new shifts
-const DEFAULT_SHIFT_TIME = { start: "08:00", end: "16:00" };
-
-// Color scheme for UI components
+// Constants
 const colors = {
   primary: "#3B82F6",
   secondary: "#10B981",
@@ -72,7 +69,6 @@ const colors = {
   textSecondary: "#6B7280",
 };
 
-// Color mapping for different employee roles
 const roleColors: Record<string, string> = {
   "Cleaning Supervisor": colors.primary,
   Janitor: colors.secondary,
@@ -80,7 +76,6 @@ const roleColors: Record<string, string> = {
   Default: colors.textSecondary,
 };
 
-// Department options for filtering employees
 const departments = [
   "Manager",
   "Cleaning Supervisor",
@@ -89,15 +84,14 @@ const departments = [
   "Restroom Services",
 ];
 
-// Drag item types
 const ItemTypes = {
   SHIFT: "shift",
+  EMPTY_CELL: "empty_cell",
 };
 
-// =============================================
-// TYPE INTERFACES
-// =============================================
+const DEFAULT_SHIFT_TIME = { start: "08:00", end: "16:00" };
 
+// Interfaces
 interface LocationData {
   id: string;
   name: string;
@@ -132,13 +126,25 @@ interface DragItem {
   shift: ShiftWithEmployees;
 }
 
-// =============================================
-// DRAG AND DROP COMPONENTS
-// =============================================
+interface EmptyCellDragItem {
+  type: string;
+  shift: ShiftWithEmployees;
+  targetEmployeeId: number;
+  targetDate: string;
+}
 
-/**
- * ShiftCard component with drag and drop capabilities
- */
+// Helper Functions
+const getEmployeeFromShift = (shift: ShiftWithEmployees) => {
+  if (!shift.employees || shift.employees.length === 0) return null;
+  return shift.employees[0].employee || null;
+};
+
+const getEmployeeIdFromShift = (shift: ShiftWithEmployees) => {
+  const employee = getEmployeeFromShift(shift);
+  return employee?.id || null;
+};
+
+// Components
 const ShiftCard: React.FC<{
   shift: ShiftWithEmployees;
   onDrop: (
@@ -156,10 +162,10 @@ const ShiftCard: React.FC<{
     }),
   }));
 
-  const [, drop] = useDrop(() => ({
-    accept: ItemTypes.SHIFT,
-    drop: (item: DragItem) => {
-      if (item.shift.id !== shift.id) {
+  const [{ isOver }, drop] = useDrop(() => ({
+    accept: [ItemTypes.SHIFT, ItemTypes.EMPTY_CELL],
+    drop: (item: DragItem | EmptyCellDragItem) => {
+      if (item.type === ItemTypes.SHIFT && item.shift.id !== shift.id) {
         onDrop(shift, item.shift);
       }
     },
@@ -168,9 +174,21 @@ const ShiftCard: React.FC<{
     }),
   }));
 
-  if (shift.employees.length === 0) return null;
+  // Create a ref and apply both drag and drop to it
+  const ref = useRef<HTMLDivElement>(null);
+  drag(drop(ref));
 
-  const employee = shift.employees[0].employee;
+  // Safe access to employee data
+  if (
+    !shift.employees ||
+    shift.employees.length === 0 ||
+    !shift.employees[0].employee
+  ) {
+    return null;
+  }
+
+  const shiftEmployeeData = shift.employees[0];
+  const employee = shiftEmployeeData.employee;
   const roleColor = roleColors[employee.position || ""] || roleColors.Default;
   const employeeName = employee.user
     ? `${employee.user.first_name} ${employee.user.last_name}`
@@ -199,14 +217,14 @@ const ShiftCard: React.FC<{
 
   return (
     <div
-      ref={(node) => drag(drop(node))}
+      ref={ref}
       className={`relative group p-3 mb-2 shadow-xs transition-all z-10
-                   border border-gray-100 hover:border-gray-200 bg-white hover:shadow-sm
-                   hover:translate-y-[0px] transform duration-150
-                   cursor-grab active:cursor-grabbing ${
+                 border border-gray-100 hover:border-gray-200 bg-white hover:shadow-sm
+                 hover:translate-y-[0px] transform duration-150
+                 cursor-grab active:cursor-grabbing ${
                    isDragging ? "opacity-50" : "opacity-100"
-                 }`}
-      style={{ display: "absolute",
+                 } ${isOver ? "border-2 border-blue-300" : ""}`}
+      style={{
         borderLeft: `4px solid ${roleColor}`,
         boxShadow: `0 1px 3px 0 rgba(0, 0, 0, 0.1)`,
         background: `linear-gradient(to right, rgba(${parseInt(
@@ -219,10 +237,8 @@ const ShiftCard: React.FC<{
       }}
       data-tooltip-id={`shift-${shift.id}`}
       data-tooltip-html={`
-        <div class="p-1 bg-white  order border-gray-200 max-w-xs">
-          <div class="font-semibold text-gray-800">
-            ${employeeName}
-          </div>
+        <div class="p-1 bg-white border border-gray-200 max-w-xs">
+          <div class="font-semibold text-gray-800">${employeeName}</div>
           <div class="text-sm text-gray-600 mb-1">${
             employee.position || "No Position"
           }</div>
@@ -230,18 +246,13 @@ const ShiftCard: React.FC<{
             <span class="inline-block w-2 h-2 rounded-full" style="background-color: ${roleColor}"></span>
             ${timeRange}
           </div>
-          <div class="text-xs text-gray-500">
-            ${clientName}
-          </div>
+          <div class="text-xs text-gray-500">${clientName}</div>
         </div>
       `}
     >
       <div className="flex justify-between items-center">
         <div>
           <span className="text-xs font-medium text-gray-500">{timeRange}</span>
-          <p className="text-sm font-medium text-gray-800 truncate">
-            {employeeName.split(" ")[0]}&apos;s Shift
-          </p>
         </div>
 
         <Dropdown menu={{ items: dropdownItems }} trigger={["click"]}>
@@ -263,51 +274,66 @@ const ShiftCard: React.FC<{
   );
 };
 
-/**
- * EmptyShiftCell component for adding new shifts
- */
 const EmptyShiftCell: React.FC<{
   employeeId: number;
   date: string;
   isToday: boolean;
   onAdd: (employeeId: number, date: string) => void;
-}> = React.memo(({ employeeId, date, isToday, onAdd }) => (
-  <div
-    className={`flex-1 flex flex-col items-center justify-center text-center p-2 rounded-lg h-full min-h-[60px] ${
-      isToday
-        ? "border-2 border-blue-300 bg-blue-50 hover:bg-blue-100"
-        : "border border-dashed border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-    } transition-all cursor-pointer hover:shadow-xs`}
-    onClick={() => onAdd(employeeId, date)}
-  >
-    <PlusIcon
-      className={`w-4 h-4 mb-1 ${isToday ? "text-blue-500" : "text-gray-400"}`}
-    />
-    <span
-      className={`text-xs font-medium ${
-        isToday ? "text-blue-600" : "text-gray-500"
-      }`}
+  onMove: (shift: ShiftWithEmployees, employeeId: number, date: string) => void;
+}> = React.memo(({ employeeId, date, isToday, onAdd, onMove }) => {
+  const [{ isOver }, drop] = useDrop(() => ({
+    accept: ItemTypes.SHIFT,
+    drop: (item: DragItem) => {
+      onMove(item.shift, employeeId, date);
+    },
+    collect: (monitor) => ({
+      isOver: !!monitor.isOver(),
+    }),
+  }));
+
+  // Create a ref and apply drop to it
+  const ref = useRef<HTMLDivElement>(null);
+  drop(ref);
+
+  return (
+    <div
+      ref={ref}
+      className={`flex-1 flex flex-col items-center justify-center text-center p-2 rounded-lg h-full min-h-[60px] ${
+        isToday
+          ? "border-2 border-blue-300 bg-blue-50 hover:bg-blue-100"
+          : "border border-dashed border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+      } ${
+        isOver ? "bg-blue-100 border-blue-300" : ""
+      } transition-all cursor-pointer hover:shadow-xs`}
+      onClick={() => onAdd(employeeId, date)}
     >
-      {isToday ? "Add to today" : "Add shift"}
-    </span>
-  </div>
-));
+      <PlusIcon
+        className={`w-4 h-4 mb-1 ${
+          isToday ? "text-blue-500" : "text-gray-400"
+        }`}
+      />
+      <span
+        className={`text-xs font-medium ${
+          isToday ? "text-blue-600" : "text-gray-500"
+        }`}
+      >
+        {isToday ? "Add to today" : "Add shift"}
+      </span>
+      {isOver && (
+        <div className="absolute inset-0 bg-blue-100 opacity-50 rounded-lg border-2 border-blue-300 border-dashed" />
+      )}
+    </div>
+  );
+});
 
 EmptyShiftCell.displayName = "EmptyShiftCell";
 
-// =============================================
-// MAIN COMPONENT
-// =============================================
-
+// Main Component
 const ShiftSchedulerByLocation: React.FC = () => {
-  // =============================================
-  // HOOKS AND STATE MANAGEMENT
-  // =============================================
-
-  // Authentication hook
   const { token } = useAuth();
+  const [preLoading, setPreLoading] = useState(false);
+  const [api, contextHolder] = notification.useNotification();
 
-  // Main component state
   const [state, setState] = useState<ComponentState>({
     shifts: [],
     employees: [],
@@ -330,19 +356,7 @@ const ShiftSchedulerByLocation: React.FC = () => {
     },
   });
 
-  // Loading state for initial data fetching
-  const [preLoading, setPreLoading] = useState(false);
-
-  // Notification system setup
-  const [api, contextHolder] = notification.useNotification();
-
-  // =============================================
-  // UTILITY FUNCTIONS
-  // =============================================
-
-  /**
-   * Helper function to show notifications with consistent styling
-   */
+  // Helper functions
   const showNotification = useCallback(
     (
       type: "success" | "info" | "warning" | "error",
@@ -359,9 +373,6 @@ const ShiftSchedulerByLocation: React.FC = () => {
     [api]
   );
 
-  /**
-   * Safely gets employee's full name, handling missing data
-   */
   const getEmployeeFullName = useCallback((employee: Employee): string => {
     if (!employee.user) {
       return (
@@ -375,9 +386,6 @@ const ShiftSchedulerByLocation: React.FC = () => {
     );
   }, []);
 
-  /**
-   * Validates that shift end time is after start time
-   */
   const validateShiftTime = useCallback(
     (startTime: string, endTime: string): boolean => {
       const start = dayjs(startTime, "HH:mm");
@@ -387,13 +395,7 @@ const ShiftSchedulerByLocation: React.FC = () => {
     []
   );
 
-  // =============================================
-  // API OPERATIONS
-  // =============================================
-
-  /**
-   * Handles adding a new shift for an employee on a specific date
-   */
+  // Event handlers
   const handleAddShift = useCallback(
     async (employeeId: number, date: string) => {
       if (!token || !state.selectedLocation) {
@@ -404,7 +406,6 @@ const ShiftSchedulerByLocation: React.FC = () => {
         return;
       }
 
-      // Find employee for notification
       const employee = state.employees.find((e) => e.id === employeeId);
       if (!employee) {
         setState((prev) => ({ ...prev, error: "Employee not found" }));
@@ -417,7 +418,6 @@ const ShiftSchedulerByLocation: React.FC = () => {
           loading: { ...prev.loading, shifts: true },
         }));
 
-        // Prepare shift creation data
         const createShiftDto: CreateShiftWithEmployeesDto = {
           client_id: parseInt(state.selectedLocation.id),
           date: dayjs(date).format("YYYY-MM-DD"),
@@ -427,19 +427,11 @@ const ShiftSchedulerByLocation: React.FC = () => {
           shift_type: "regular",
         };
 
-        // Create shift via API
-        const { shift, employeeShifts } = await apiCall.shifts.createShift(
+        const newShiftWithEmployees = await apiCall.shifts.createShift(
           createShiftDto,
           token
         );
 
-        // Create new shift object with employees
-        const newShiftWithEmployees: ShiftWithEmployees = {
-          ...shift,
-          employees: employeeShifts || [],
-        };
-
-        // Update local state
         setState((prev) => ({
           ...prev,
           shifts: [...prev.shifts, newShiftWithEmployees],
@@ -474,17 +466,59 @@ const ShiftSchedulerByLocation: React.FC = () => {
     ]
   );
 
-  /**
-   * Handles updating shift time through the modal
-   */
+  const handleMoveShift = useCallback(
+    async (shift: ShiftWithEmployees, employeeId: number, date: string) => {
+      if (!token) return;
+
+      try {
+        setState((prev) => ({
+          ...prev,
+          loading: { ...prev.loading, shifts: true },
+        }));
+
+        const result = await apiCall.shifts.moveShiftToDate(
+          shift.id,
+          date,
+          employeeId,
+          token
+        );
+
+        setState((prev) => ({
+          ...prev,
+          shifts: prev.shifts
+            .filter((s) => s.id !== shift.id)
+            .concat(result.newShift),
+          loading: { ...prev.loading, shifts: false },
+          error: null,
+        }));
+
+        showNotification(
+          "success",
+          "Shift Moved",
+          "Shift was successfully moved to new location"
+        );
+      } catch (error) {
+        console.error("Failed to move shift:", error);
+        showNotification(
+          "error",
+          "Move Failed",
+          error instanceof Error ? error.message : "Failed to move shift"
+        );
+        setState((prev) => ({
+          ...prev,
+          loading: { ...prev.loading, shifts: false },
+        }));
+      }
+    },
+    [token, showNotification]
+  );
+
   const handleUpdateShiftTime = useCallback(async () => {
     if (!state.shiftToEdit || !token) return;
 
-    // Format time to HH:mm
     const formattedStart = state.newTime.start.split(":").slice(0, 2).join(":");
     const formattedEnd = state.newTime.end.split(":").slice(0, 2).join(":");
 
-    // Validate time range
     if (!validateShiftTime(formattedStart, formattedEnd)) {
       setState((prev) => ({
         ...prev,
@@ -499,20 +533,17 @@ const ShiftSchedulerByLocation: React.FC = () => {
         loading: { ...prev.loading, shifts: true },
       }));
 
-      // Prepare update data
       const updateDto: UpdateShiftDto = {
         start_time: formattedStart,
         end_time: formattedEnd,
       };
 
-      // Update shift via API
       const updatedShift = await apiCall.shifts.updateShift(
         state.shiftToEdit.id,
         updateDto,
         token
       );
 
-      // Update local state
       setState((prev) => ({
         ...prev,
         shifts: prev.shifts.map((s) =>
@@ -550,9 +581,6 @@ const ShiftSchedulerByLocation: React.FC = () => {
     showNotification,
   ]);
 
-  /**
-   * Handles deleting a shift
-   */
   const handleDeleteShift = useCallback(
     async (shiftId: number) => {
       if (!token) return;
@@ -563,10 +591,8 @@ const ShiftSchedulerByLocation: React.FC = () => {
           loading: { ...prev.loading, shifts: true },
         }));
 
-        // Delete shift via API
         await apiCall.shifts.deleteShift(shiftId, token);
 
-        // Update local state
         setState((prev) => ({
           ...prev,
           shifts: prev.shifts.filter((shift) => shift.id !== shiftId),
@@ -595,9 +621,6 @@ const ShiftSchedulerByLocation: React.FC = () => {
     [token, showNotification]
   );
 
-  /**
-   * Swaps two shifts between employees/dates
-   */
   const handleSwapShifts = useCallback(
     async (
       targetShift: ShiftWithEmployees,
@@ -611,29 +634,26 @@ const ShiftSchedulerByLocation: React.FC = () => {
           loading: { ...prev.loading, shifts: true },
         }));
 
-        // Validate shifts have employees
-        if (
-          sourceShift.employees.length === 0 ||
-          targetShift.employees.length === 0
-        ) {
+        const targetEmployee = getEmployeeFromShift(targetShift);
+        const sourceEmployee = getEmployeeFromShift(sourceShift);
+
+        if (!targetEmployee || !sourceEmployee) {
           throw new Error("Shift has no assigned employees");
         }
 
-        // Create swap operations
         const swapOperations = [
           {
             shiftId: sourceShift.id,
-            newEmployeeId: targetShift.employees[0].employee.id,
+            newEmployeeId: targetEmployee.id,
             newDate: targetShift.date,
           },
           {
             shiftId: targetShift.id,
-            newEmployeeId: sourceShift.employees[0].employee.id,
+            newEmployeeId: sourceEmployee.id,
             newDate: sourceShift.date,
           },
         ];
 
-        // Perform swap operations
         const updatedShifts = await Promise.all(
           swapOperations.map(async (operation) => {
             const { shiftId, newEmployeeId, newDate } = operation;
@@ -647,7 +667,6 @@ const ShiftSchedulerByLocation: React.FC = () => {
           })
         );
 
-        // Update local state with swapped shifts
         setState((prev) => ({
           ...prev,
           shifts: prev.shifts
@@ -678,13 +697,7 @@ const ShiftSchedulerByLocation: React.FC = () => {
     [token, showNotification]
   );
 
-  // =============================================
-  // DATA FETCHING EFFECTS
-  // =============================================
-
-  /**
-   * Effect to fetch initial data (clients and employees) when component mounts
-   */
+  // Data fetching effects
   useEffect(() => {
     if (!token) return;
 
@@ -695,22 +708,17 @@ const ShiftSchedulerByLocation: React.FC = () => {
           loading: { ...prev.loading, general: true },
         }));
 
-        // Fetch clients and employees in parallel
         const [clients, employees] = await Promise.all([
           apiCall.clients.fetchClients(token),
           apiCall.employees.fetchEmployees(token),
         ]);
 
-        // Update state with fetched data
         setState((prev) => ({
           ...prev,
           clients,
           employees,
           selectedLocation: clients[0]
-            ? {
-                id: clients[0].id.toString(),
-                name: clients[0].business_name,
-              }
+            ? { id: clients[0].id.toString(), name: clients[0].business_name }
             : null,
           loading: { ...prev.loading, general: false },
           error: null,
@@ -728,9 +736,6 @@ const ShiftSchedulerByLocation: React.FC = () => {
     fetchInitialData();
   }, [token]);
 
-  /**
-   * Effect to fetch shifts when location or date range changes
-   */
   useEffect(() => {
     if (!token || !state.selectedLocation) return;
 
@@ -742,7 +747,6 @@ const ShiftSchedulerByLocation: React.FC = () => {
           loading: { ...prev.loading, shifts: true },
         }));
 
-        // Fetch shifts for selected location and date range
         const shifts = await apiCall.shifts.fetchShifts(
           {
             clientId: parseInt(state.selectedLocation!.id),
@@ -775,31 +779,20 @@ const ShiftSchedulerByLocation: React.FC = () => {
     fetchShiftsData();
   }, [token, state.selectedLocation, state.dateRange]);
 
-  // =============================================
-  // COMPUTED VALUES (MEMOIZED)
-  // =============================================
-
-  /**
-   * Filtered employees based on search term, department, and location
-   */
+  // Memoized data
   const filteredEmployees = useMemo(() => {
     return state.employees.filter((employee) => {
       if (!state.selectedLocation) return false;
 
-      // Check if employee is assigned to selected location
       const matchesLocation = employee.assigned_locations?.includes(
         state.selectedLocation.name
       );
-
-      // Check search term against name and position
       const search = state.searchTerm.toLowerCase();
       const fullName = getEmployeeFullName(employee).toLowerCase();
       const position = employee.position?.toLowerCase() ?? "";
 
       const matchesSearch =
         search === "" || fullName.includes(search) || position.includes(search);
-
-      // Check department filter
       const matchesDepartment =
         state.departmentFilter === "All" ||
         employee.position === state.departmentFilter;
@@ -814,31 +807,29 @@ const ShiftSchedulerByLocation: React.FC = () => {
     getEmployeeFullName,
   ]);
 
-  /**
-   * Shifts filtered by selected location and date range
-   */
   const displayedShifts = useMemo(() => {
     if (!state.selectedLocation) return [];
 
     return state.shifts
-      .filter(
-        (shift) =>
-          shift.client_id === parseInt(state.selectedLocation!.id) &&
-          (state.view === "day"
+      .filter((shift) => {
+        const isDateInRange =
+          state.view === "day"
             ? dayjs(shift.date).isSame(state.dateRange[0], "day")
             : dayjs(shift.date).isBetween(
                 state.dateRange[0],
                 state.dateRange[1],
                 "day",
                 "[]"
-              ))
-      )
+              );
+
+        return (
+          shift.client_id === parseInt(state.selectedLocation!.id) &&
+          isDateInRange
+        );
+      })
       .sort((a, b) => a.start_time.localeCompare(b.start_time));
   }, [state.shifts, state.selectedLocation, state.view, state.dateRange]);
 
-  /**
-   * Array of days to display in the current view
-   */
   const daysInView = useMemo(() => {
     if (state.view === "day") return [state.dateRange[0]];
 
@@ -852,11 +843,7 @@ const ShiftSchedulerByLocation: React.FC = () => {
     return days;
   }, [state.view, state.dateRange]);
 
-  // =============================================
-  // RENDER LOGIC
-  // =============================================
-
-  // Show location selection if no location is selected but clients are loaded
+  // Render loading state if no location selected
   if (!state.selectedLocation && state.clients.length > 0) {
     return (
       <div className="p-4">
@@ -892,13 +879,12 @@ const ShiftSchedulerByLocation: React.FC = () => {
     );
   }
 
+  // Main render
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="min-h-screen">
-        {/* Notification context holder */}
         {contextHolder}
 
-        {/* Loading skeleton */}
         {preLoading ? (
           <div className="p-4 space-y-4">
             <Skeleton className="h-10 w-full rounded-lg" />
@@ -908,19 +894,17 @@ const ShiftSchedulerByLocation: React.FC = () => {
           </div>
         ) : (
           <div className="max-w-7xl mx-auto">
-            {/* =============================================
-                HEADER SECTION
-                ============================================= */}
+            {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 bg-white p-4 rounded-xl shadow-xs border border-gray-100">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-teal-50">
                   <FaStore className="text-teal-600 text-xl" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-800">
+                  <h1 className="text-base font-bold text-gray-800">
                     {state.selectedLocation?.name || "Shift Scheduler"}
                   </h1>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-xs text-gray-500">
                     {state.view === "day"
                       ? state.dateRange[0].format("MMMM D, YYYY")
                       : `${state.dateRange[0].format(
@@ -931,7 +915,6 @@ const ShiftSchedulerByLocation: React.FC = () => {
               </div>
 
               <div className="flex flex-wrap gap-3 items-center">
-                {/* Week Navigation Controls */}
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => {
@@ -1001,7 +984,6 @@ const ShiftSchedulerByLocation: React.FC = () => {
                   </button>
                 </div>
 
-                {/* View Selector and Date Range Picker */}
                 <Select
                   value={state.view}
                   onChange={(value: "day" | "week" | "month") =>
@@ -1009,7 +991,6 @@ const ShiftSchedulerByLocation: React.FC = () => {
                   }
                   className="w-32 rounded-lg"
                   suffixIcon={<FaCalendarAlt className="text-gray-400" />}
-                  dropdownStyle={{ borderRadius: "12px" }}
                 >
                   <Option value="day">Day View</Option>
                   <Option value="week">Week View</Option>
@@ -1020,21 +1001,19 @@ const ShiftSchedulerByLocation: React.FC = () => {
                   value={state.dateRange}
                   onChange={(dates) => {
                     if (dates && dates[0] && dates[1]) {
+                      // Ensure dates are not null by using non-null assertion
                       setState((prev) => ({
                         ...prev,
-                        dateRange: [dates[0], dates[1]],
+                        dateRange: [dates[0]!, dates[1]!],
                       }));
                     }
                   }}
                   className="w-64 rounded-lg [&_.ant-picker-input>input]:text-sm"
-                  popupClassName="rounded-lg"
                 />
               </div>
             </div>
 
-            {/* =============================================
-                ERROR ALERT
-                ============================================= */}
+            {/* Error Display */}
             {state.error && (
               <Alert
                 message={state.error}
@@ -1046,11 +1025,8 @@ const ShiftSchedulerByLocation: React.FC = () => {
               />
             )}
 
-            {/* =============================================
-                FILTERS SECTION
-                ============================================= */}
+            {/* Filters Section */}
             <div className="bg-white p-4 rounded-xl shadow-xs my-6 flex flex-wrap gap-4 items-center border border-gray-200">
-              {/* Location Selector */}
               <div className="flex items-center gap-2 flex-1 min-w-[250px]">
                 <div className="p-2 rounded-lg bg-teal-50">
                   <FaStore className="text-teal-600" />
@@ -1074,7 +1050,8 @@ const ShiftSchedulerByLocation: React.FC = () => {
                   }}
                   loading={state.loading.clients}
                   placeholder="Select location"
-                  dropdownStyle={{ borderRadius: "12px" }}
+                  // styles={{ popup: { borderRadius: "12px" } }}
+                  disabled={state.loading.clients}
                 >
                   {state.clients.map((client) => (
                     <Option key={client.id} value={client.id.toString()}>
@@ -1084,7 +1061,6 @@ const ShiftSchedulerByLocation: React.FC = () => {
                 </Select>
               </div>
 
-              {/* Search Input */}
               <div className="relative flex-1 min-w-[250px]">
                 <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 p-2 rounded-lg bg-gray-50">
                   <FaSearch />
@@ -1104,7 +1080,6 @@ const ShiftSchedulerByLocation: React.FC = () => {
                 />
               </div>
 
-              {/* Department Filter */}
               <div className="flex items-center gap-2 flex-1 min-w-[200px]">
                 <div className="p-2 rounded-lg bg-teal-50">
                   <FaFilter className="text-teal-600" />
@@ -1116,7 +1091,7 @@ const ShiftSchedulerByLocation: React.FC = () => {
                   }
                   className="flex-1 rounded-lg"
                   disabled={state.loading.employees}
-                  dropdownStyle={{ borderRadius: "12px" }}
+                  // styles={{ popup: { borderRadius: "12px" } }}
                 >
                   <Option value="All">All Departments</Option>
                   {departments.map((dept) => (
@@ -1127,7 +1102,6 @@ const ShiftSchedulerByLocation: React.FC = () => {
                 </Select>
               </div>
 
-              {/* Action Buttons */}
               <div className="flex gap-2 ml-auto">
                 <Button
                   icon={<FaPrint className="text-teal-600" />}
@@ -1146,16 +1120,14 @@ const ShiftSchedulerByLocation: React.FC = () => {
               </div>
             </div>
 
-            {/* =============================================
-                SCHEDULE GRID SECTION
-                ============================================= */}
+            {/* Shifts Table */}
             {state.loading.shifts ? (
               <div className="flex justify-center items-center h-64 bg-white rounded-xl shadow-xs border border-gray-200">
                 <Spin size="large" />
               </div>
             ) : (
               <div className="rounded-xl shadow-xs overflow-hidden bg-white border border-gray-200">
-                <div className="overflow-x-auto ">
+                <div className="overflow-x-auto">
                   <div
                     className="grid"
                     style={{
@@ -1164,15 +1136,13 @@ const ShiftSchedulerByLocation: React.FC = () => {
                       }, minmax(150px, 1fr))`,
                     }}
                   >
-                    {/* =============================================
-                        GRID HEADER ROW
-                        ============================================= */}
+                    {/* Table Header */}
                     <div className="bg-teal-600 p-3 font-semibold text-white border-r sticky left-0 flex items-center z-10">
                       <MdDragIndicator className="text-teal-200 mr-2 text-lg" />
                       <span>Employee</span>
                     </div>
 
-                    {/* Day Header Columns */}
+                    {/* Date Headers */}
                     {daysInView.map((day) => {
                       const isToday = dayjs().isSame(day, "day");
                       const isWeekend = [0, 6].includes(day.day());
@@ -1214,12 +1184,10 @@ const ShiftSchedulerByLocation: React.FC = () => {
                       );
                     })}
 
-                    {/* =============================================
-                        EMPLOYEE ROWS WITH SHIFT CELLS
-                        ============================================= */}
+                    {/* Employee Rows */}
                     {filteredEmployees.map((employee) => (
                       <React.Fragment key={employee.id}>
-                        {/* Employee Name Column */}
+                        {/* Employee Info Cell */}
                         <div className="flex items-center gap-3 p-3 border-b border-r border-gray-100 bg-white sticky left-0 hover:bg-gray-50 transition-colors shadow-sm z-0">
                           <Avatar
                             className="bg-gradient-to-br from-teal-400 to-teal-600 text-white shadow-xs"
@@ -1232,7 +1200,6 @@ const ShiftSchedulerByLocation: React.FC = () => {
                               .join("")}
                           </Avatar>
 
-                          {/* Employee Info */}
                           <div className="min-w-0">
                             <div className="font-medium text-sm truncate text-gray-800">
                               {getEmployeeFullName(employee)}
@@ -1243,17 +1210,21 @@ const ShiftSchedulerByLocation: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Shift Cells for each day */}
+                        {/* Shift Cells for Each Day */}
                         {daysInView.map((day) => {
                           const dateStr = day.format("YYYY-MM-DD");
-                          const employeeShifts = displayedShifts.filter(
-                            (s) =>
-                              s.employees.some(
-                                (e) => e.employee.id === employee.id
-                              ) && s.date === dateStr
-                          );
                           const isToday = dayjs().isSame(day, "day");
                           const isWeekend = [0, 6].includes(day.day());
+
+                          // Safe filtering of shifts for this employee and date
+                          const employeeShifts = displayedShifts.filter(
+                            (shift) => {
+                              const hasEmployee = shift.employees?.some(
+                                (e) => e.employee?.id === employee.id
+                              );
+                              return hasEmployee && shift.date === dateStr;
+                            }
+                          );
 
                           return (
                             <div
@@ -1267,17 +1238,16 @@ const ShiftSchedulerByLocation: React.FC = () => {
                               }`}
                             >
                               <div className="space-y-1 h-full flex flex-col">
-                                {/* Empty State - Show when no shifts exist */}
                                 {employeeShifts.length === 0 && (
                                   <EmptyShiftCell
                                     employeeId={employee.id}
                                     date={dateStr}
                                     isToday={isToday}
                                     onAdd={handleAddShift}
+                                    onMove={handleMoveShift}
                                   />
                                 )}
 
-                                {/* Render existing shifts */}
                                 {employeeShifts.map((shift) => (
                                   <ShiftCard
                                     key={shift.id}
@@ -1298,7 +1268,6 @@ const ShiftSchedulerByLocation: React.FC = () => {
                                   />
                                 ))}
 
-                                {/* Add another shift button when shifts already exist */}
                                 {employeeShifts.length > 0 && (
                                   <button
                                     onClick={() =>
@@ -1324,20 +1293,18 @@ const ShiftSchedulerByLocation: React.FC = () => {
               </div>
             )}
 
-            {/* =============================================
-                EDIT SHIFT TIME MODAL
-                ============================================= */}
+            {/* Edit Shift Time Modal */}
             <Modal
               title="Edit Shift Time"
               open={state.isTimePickerModalOpen}
               onOk={handleUpdateShiftTime}
-              onCancel={() => {
+              onCancel={() =>
                 setState((prev) => ({
                   ...prev,
                   isTimePickerModalOpen: false,
                   error: null,
-                }));
-              }}
+                }))
+              }
               okText="Save Changes"
               cancelText="Cancel"
               confirmLoading={state.loading.shifts}
@@ -1357,7 +1324,6 @@ const ShiftSchedulerByLocation: React.FC = () => {
             >
               {state.shiftToEdit && (
                 <div className="space-y-4">
-                  {/* Time Input Grid */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1393,7 +1359,6 @@ const ShiftSchedulerByLocation: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Error Alert in Modal */}
                   {state.error && (
                     <Alert
                       message={state.error}

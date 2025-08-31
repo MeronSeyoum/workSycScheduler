@@ -14,11 +14,10 @@ import {
 import { useAuth } from "@/components/providers/AuthProvider";
 import DateRangeSelector from "@/components/ui/dashboard/DateRangeSelector";
 import { api } from "@/lib/api";
-import { DashboardResponse } from "@/lib/types/dashboard";
+import { DashboardResponse, TabType } from "@/lib/types/dashboard";
 import { DEFAULT_DASHBOARD_RESPONSE } from "@/lib/constants/dashboardDefaults";
 
 
-import { TabType } from "@/lib/types/dashboard";
 import { OverviewTab } from "@/components/ui/dashboard/OverviewTab";
 import { PerformanceTab } from "@/components/ui/dashboard/PerformanceTab";
 import { AlertsTab } from "@/components/ui/dashboard/AlertsTab";

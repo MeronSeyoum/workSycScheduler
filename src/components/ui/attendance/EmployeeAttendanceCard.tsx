@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { Clock, MapPin, Smartphone, Mail } from 'lucide-react';
-import Badge from './Badge';
+import { Badge } from '../common/badge';
 
 interface EmployeeCardProps {
   employee: {

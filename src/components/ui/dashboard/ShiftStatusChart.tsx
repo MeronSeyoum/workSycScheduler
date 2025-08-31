@@ -5,7 +5,6 @@ interface ShiftStatusChartProps {
   shifts: any[];
 }
 
-
 export const COLORS = {
   completed: "#00C49F",
   scheduled: "#8884D8",
@@ -32,39 +31,38 @@ export const ShiftStatusChart: React.FC<ShiftStatusChartProps> = ({ shifts }) =>
   ];
 
   return (
-                    <ResponsiveContainer width="100%" height="100%">
-    
-    <PieChart
-   
-       margin={{
-      top: 20,
-      right: 50,
-      bottom: 20,
-      left: 20
-    }}
-    >
-      <Pie
-        data={shiftStatusData}
-        cx="50%"
-        cy="50%"
-        innerRadius={60}
-        outerRadius={80}
-        paddingAngle={5}
-        dataKey="value"
-        nameKey="name"
-        label={({ name, percent }) =>
-          `${name}: ${(percent * 100).toFixed(0)}%`
-        }
+    <ResponsiveContainer width="100%" height="100%">
+      <PieChart
+        margin={{
+          top: 20,
+          right: 50,
+          bottom: 20,
+          left: 20
+        }}
       >
-        {shiftStatusData.map((entry, index) => (
-          <Cell
-            key={`cell-${index}`}
-            fill={COLORS[entry.name.toLowerCase() as keyof typeof COLORS]}
-          />
-        ))}
-      </Pie>
-      <Tooltip formatter={(value) => [`${value} shifts`, "Count"]} />
-    </PieChart>
+        <Pie
+          data={shiftStatusData}
+          cx="50%"
+          cy="50%"
+          innerRadius={60}
+          outerRadius={80}
+          paddingAngle={5}
+          dataKey="value"
+          nameKey="name"
+          label={({ name, percent }) =>
+            // Add null check for percent
+            `${name}: ${percent ? (percent * 100).toFixed(0) : 0}%`
+          }
+        >
+          {shiftStatusData.map((entry, index) => (
+            <Cell
+              key={`cell-${index}`}
+              fill={COLORS[entry.name.toLowerCase() as keyof typeof COLORS]}
+            />
+          ))}
+        </Pie>
+        <Tooltip formatter={(value) => [`${value} shifts`, "Count"]} />
+      </PieChart>
     </ResponsiveContainer>
   );
 };

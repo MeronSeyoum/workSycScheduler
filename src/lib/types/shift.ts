@@ -49,47 +49,97 @@ export interface UpdateShiftDto {
   notes?: string;
 }
 
+
 export interface ShiftWithEmployees extends Shift {
   client: {
     id: number;
     business_name: string;
+    email: string;
+    phone: string;
+    contact_person: string;
+    location_address: {
+      city: string;
+      state: string;
+      street: string;
+      country: string;
+      postal_code: string;
+    };
+    status: string;
+    notes: string | null;
+    createdAt: string;
+    updatedAt: string;
   };
   employee_shifts: Array<{
-    employee_id: number;
-    status: ShiftStatus;
-    // other fields...
-  }>;
-  employees: {
     id: number;
     employee_id: number;
     shift_id: number;
     assigned_by: number;
     status: ShiftStatus;
     notes: string | null;
-    created_at: string;
-    updated_at: string;
+  }>;
+  employees: Array<{
+    assignment_id: number;
+    status: ShiftStatus;
+    notes: string | null;
+    assigned_by: {
+      id: number;
+      first_name: string;
+      last_name: string;
+    };
     employee: {
       id: number;
-      user_id: number;
-      employee_code: string;
-      phone_number: string;
       position: string;
-      profile_image_url: string | null;
-      status: string;
+      employee_code: string;
       hire_date: string;
-      termination_date: string | null;
-      assigned_locations: string[];
-      contact: {
-        phone: string;
-        emergencyContact: string;
-        address: string;
-      };
       user: {
-        id: number;
         first_name: string;
         last_name: string;
         email: string;
       };
     };
-  }[];
+  }>;
 }
+// export interface ShiftWithEmployees extends Shift {
+//   client: {
+//     id: number;
+//     business_name: string;
+//   };
+//   employee_shifts: Array<{
+//     employee_id: number;
+//     status: ShiftStatus;
+//     // other fields...
+//   }>;
+//   employees: {
+//     id: number;
+//     employee_id: number;
+//     shift_id: number;
+//     assigned_by: number;
+//     status: ShiftStatus;
+//     notes: string | null;
+//     created_at: string;
+//     updated_at: string;
+//     employee: {
+//       id: number;
+//       user_id: number;
+//       employee_code: string;
+//       phone_number: string;
+//       position: string;
+//       profile_image_url: string | null;
+//       status: string;
+//       hire_date: string;
+//       termination_date: string | null;
+//       assigned_locations: string[];
+//       contact: {
+//         phone: string;
+//         emergencyContact: string;
+//         address: string;
+//       };
+//       user: {
+//         id: number;
+//         first_name: string;
+//         last_name: string;
+//         email: string;
+//       };
+//     };
+//   }[];
+// }

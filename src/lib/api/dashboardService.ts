@@ -49,7 +49,7 @@ export const fetchDashboardData = async (
       employees: response.data.employees || [],
       shifts: response.data.shifts || [],
       stats: transformStats(response.data.stats),
-      error: null // Explicitly set error to null on success
+      // error: null // Explicitly set error to null on success
     };
 
   } catch (error) {

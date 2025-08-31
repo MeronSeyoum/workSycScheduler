@@ -1,5 +1,5 @@
 import { Card, CardHeader, CardTitle, CardContent } from './AttendanceCard';
-import { Clock, UserCheck, UserX, AlarmClock, Calendar, TrendingUp, Clock3 } from 'lucide-react';
+import { UserCheck, UserX, AlarmClock, Clock3 } from 'lucide-react';
 import { Progress } from './progress';
 
 interface AttendanceStatsProps {
@@ -10,6 +10,20 @@ interface AttendanceStatsProps {
   totalEmployees?: number;
 }
 
+interface StatusColors {
+  bg: string;
+  text: string;
+  icon: string;
+  border: string;
+}
+
+interface StatusColorSet {
+  present: StatusColors;
+  late: StatusColors;
+  absent: StatusColors;
+  early: StatusColors;
+}
+
 export default function AttendanceStats({
   present,
   late,
@@ -17,116 +31,118 @@ export default function AttendanceStats({
   earlyDepartures,
   totalEmployees
 }: AttendanceStatsProps) {
-  const calculatePercentage = (value: number) => {
+  const calculatePercentage = (value: number): number => {
     if (!totalEmployees || totalEmployees === 0) return 0;
     return Math.round((value / totalEmployees) * 100);
   };
 
-  // Colors for consistent theming
-  const statusColors = {
-    present: { bg: 'bg-green-100', text: 'text-green-800', icon: 'text-green-500' },
-    late: { bg: 'bg-yellow-100', text: 'text-yellow-800', icon: 'text-yellow-500' },
-    absent: { bg: 'bg-red-100', text: 'text-red-800', icon: 'text-red-500' },
-    early: { bg: 'bg-orange-100', text: 'text-orange-800', icon: 'text-orange-500' }
+  // Colors for consistent theming with proper border colors
+  const statusColors: StatusColorSet = {
+    present: { 
+      bg: 'bg-green-100', 
+      text: 'text-green-800', 
+      icon: 'text-green-500',
+      border: 'border-green-500'
+    },
+    late: { 
+      bg: 'bg-yellow-100', 
+      text: 'text-yellow-800', 
+      icon: 'text-yellow-500',
+      border: 'border-yellow-500'
+    },
+    absent: { 
+      bg: 'bg-red-100', 
+      text: 'text-red-800', 
+      icon: 'text-red-500',
+      border: 'border-red-500'
+    },
+    early: { 
+      bg: 'bg-orange-100', 
+      text: 'text-orange-800', 
+      icon: 'text-orange-500',
+      border: 'border-orange-500'
+    }
   };
 
+  // Helper function to safely extract progress bar color
+  const getProgressColor = (colorSet: StatusColors): string => {
+    return colorSet.bg.replace('100', '500');
+  };
+
+  // Data for cards to avoid repetition
+  const cardData = [
+    {
+      type: 'present' as const,
+      title: 'Present',
+      value: present,
+      icon: UserCheck,
+      description: 'Attendance Rate',
+      colors: statusColors.present
+    },
+    {
+      type: 'late' as const,
+      title: 'Late Arrivals',
+      value: late,
+      icon: AlarmClock,
+      description: 'Late Rate',
+      colors: statusColors.late
+    },
+    {
+      type: 'absent' as const,
+      title: 'Absent',
+      value: absent,
+      icon: UserX,
+      description: 'Absence Rate',
+      colors: statusColors.absent
+    },
+    {
+      type: 'early' as const,
+      title: 'Early Departures',
+      value: earlyDepartures,
+      icon: Clock3,
+      description: 'Early Rate',
+      colors: statusColors.early
+    }
+  ];
+
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 ">
-      {/* Present Card */}
-      <Card className="border-l-4 border-green-500 hover:shadow-md transition-shadow bg-white">
-        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-          <CardTitle className="text-sm font-medium text-gray-600">Present</CardTitle>
-          <UserCheck className={`h-5 w-5 ${statusColors.present.icon}`} />
-        </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold text-gray-800">{present}</div>
-          {totalEmployees && (
-            <div className="mt-2">
-              <div className="flex justify-between text-xs text-gray-500 mb-1">
-                <span>Attendance Rate</span>
-                <span>{calculatePercentage(present)}%</span>
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {cardData.map((card) => {
+        const IconComponent = card.icon;
+        const percentage = calculatePercentage(card.value);
+        
+        return (
+          <Card 
+            key={card.type}
+            className={`border-l-4 ${card.colors.border} border-t-0 border-r-0 border-b-0 hover:shadow-md transition-shadow bg-white`}
+          >
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                {card.title}
+              </CardTitle>
+              <IconComponent className={`h-5 w-5 ${card.colors.icon}`} />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-gray-800">
+                {card.value}
               </div>
-              <Progress
-                value={calculatePercentage(present)}
-                className="h-2"
-                indicatorClassName={statusColors.present.bg.replace('100', '500')}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Late Card */}
-      <Card className="border-l-4 border-yellow-500 hover:shadow-md transition-shadow bg-white">
-        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-          <CardTitle className="text-sm font-medium text-gray-600">Late Arrivals</CardTitle>
-          <AlarmClock className={`h-5 w-5 ${statusColors.late.icon}`} />
-        </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold text-gray-800">{late}</div>
-          {totalEmployees && (
-            <div className="mt-2">
-              <div className="flex justify-between text-xs text-gray-500 mb-1">
-                <span>Late Rate</span>
-                <span>{calculatePercentage(late)}%</span>
-              </div>
-              <Progress
-                value={calculatePercentage(late)}
-                className="h-2"
-                indicatorClassName={statusColors.late.bg.replace('100', '500')}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Absent Card */}
-      <Card className="border-l-4 border-red-500 hover:shadow-md transition-shadow bg-white">
-        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-          <CardTitle className="text-sm font-medium text-gray-600">Absent</CardTitle>
-          <UserX className={`h-5 w-5 ${statusColors.absent.icon}`} />
-        </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold text-gray-800">{absent}</div>
-          {totalEmployees && (
-            <div className="mt-2">
-              <div className="flex justify-between text-xs text-gray-500 mb-1">
-                <span>Absence Rate</span>
-                <span>{calculatePercentage(absent)}%</span>
-              </div>
-              <Progress
-                value={calculatePercentage(absent)}
-                className="h-2"
-                indicatorClassName={statusColors.absent.bg.replace('100', '500')}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Early Departures Card */}
-      <Card className="border-l-4 border-orange-500 hover:shadow-md transition-shadow bg-white">
-        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-          <CardTitle className="text-sm font-medium text-gray-600">Early Departures</CardTitle>
-          <Clock3 className={`h-5 w-5 ${statusColors.early.icon}`} />
-        </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold text-gray-800">{earlyDepartures}</div>
-          {totalEmployees && (
-            <div className="mt-2">
-              <div className="flex justify-between text-xs text-gray-500 mb-1">
-                <span>Early Rate</span>
-                <span>{calculatePercentage(earlyDepartures)}%</span>
-              </div>
-              <Progress
-                value={calculatePercentage(earlyDepartures)}
-                className="h-2"
-                indicatorClassName={statusColors.early.bg.replace('100', '500')}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              {totalEmployees !== undefined && totalEmployees > 0 && (
+                <div className="mt-2">
+                  <div className="flex justify-between text-xs text-gray-500 mb-1">
+                    <span>{card.description}</span>
+                    <span>{percentage}%</span>
+                  </div>
+                  <Progress
+                    value={percentage}
+                    className="h-2"
+                    indicatorClassName={getProgressColor(card.colors)}
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }

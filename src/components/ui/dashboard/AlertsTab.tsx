@@ -22,9 +22,9 @@ export const AlertsTab: React.FC<AlertsTabProps> = ({
             .filter((s) => s.status === "missed")
             .slice(0, 5)
             .map((shift) => ({
-              type: "missed_shift",
+              type: "missed_shift" as const, // Add 'as const' assertion
               title: "Missed Shift",
-              priority: "high",
+              priority: "high" as const, // Add 'as const' assertion
               content: {
                 client: shift.client?.business_name || "Unknown Client",
                 date: new Date(shift.date),
@@ -38,9 +38,9 @@ export const AlertsTab: React.FC<AlertsTabProps> = ({
             .filter((e) => e.status === "on_leave")
             .slice(0, 3)
             .map((emp) => ({
-              type: "on_leave",
+              type: "on_leave" as const, // Add 'as const' assertion
               title: "Employee on Leave",
-              priority: "medium",
+              priority: "medium" as const, // Add 'as const' assertion
               content: {
                 name: `${emp.user.first_name} ${emp.user.last_name}`,
                 until: emp.termination_date
@@ -61,9 +61,9 @@ export const AlertsTab: React.FC<AlertsTabProps> = ({
             )
             .slice(0, 3)
             .map((shift) => ({
-              type: "pending_shift",
+              type: "pending_shift" as const, // Add 'as const' assertion
               title: "Missed Shift",
-              priority: "needs_review",
+              priority: "needs_review" as const, // Add 'as const' assertion
               content: {
                 client: shift.client?.business_name || "Unknown Client",
                 date: new Date(shift.date),
@@ -73,9 +73,9 @@ export const AlertsTab: React.FC<AlertsTabProps> = ({
             .filter((c) => c.status === "on_hold")
             .slice(0, 2)
             .map((client) => ({
-              type: "client_on_hold",
+              type: "client_on_hold" as const, // Add 'as const' assertion
               title: "Client On Hold",
-              priority: "needs_followup",
+              priority: "needs_followup" as const, // Add 'as const' assertion
               content: {
                 name: client.business_name,
                 lastContact: client.createdAt

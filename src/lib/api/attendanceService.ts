@@ -27,7 +27,6 @@ const safeFormatDate = (dateValue: any): string => {
 
 // Helper function to transform API attendance record to UI format
 const transformAttendanceRecord = (record: any): AttendanceRecord => {
-  
   return {
     id: record.id || 0,
     employeeId: record.employee_id || record.employeeId || 0,
@@ -37,7 +36,7 @@ const transformAttendanceRecord = (record: any): AttendanceRecord => {
     employeeCode: record.employee?.employee_code || "N/A",
     date: record.shift?.date || safeFormatDate(record.clock_in_time || record.clockIn),
     clockIn: record.clock_in_time || record.clockIn || '',
-    clockOut: record.clock_out_time || record.clockOut || null,
+    clockOut: record.clock_out_time || record.clockOut || '', // Fixed: empty string instead of null
     status: (record.status as 'pending'|
     'present'|
     'late_arrival'|
@@ -48,9 +47,9 @@ const transformAttendanceRecord = (record: any): AttendanceRecord => {
     'partial_attendance'|
     'no_show'|
     'excused_absence') || 'absent',
-    hoursWorked: typeof record.hours === 'number' ? record.hours : null,
+    hoursWorked: typeof record.hours === 'number' ? record.hours : 0, // Fixed: 0 instead of null
     shiftType: record.shift?.shift_type || "regular",
-    position: record.employee?.position || "N/A",
+    position: record.employee?.position || record.position || "N/A",
     location: record.shift?.client?.business_name || "Remote",
     method: (record.method as 'geofence' | 'qrcode' | 'manual') || 'manual',
     notes: record.notes || undefined,
@@ -74,18 +73,15 @@ export const fetchAttendanceSummary = async (
         headers: {
           Authorization: `Bearer ${token}`,
            "Content-Type": "application/json",
-          // "Cache-Control": "no-cache",
         },
       },
       token
     );
 
-
     // Handle both wrapped and direct response formats
     const summaryData = response?.data || response;
 
     console.log("Raw summaryData response:", summaryData);
-
 
     if (!summaryData) {
       console.error("Invalid response structure:", response);
@@ -154,7 +150,6 @@ export const fetchRecentAttendance = async (
       token
     );
 
-
     // Handle both wrapped and direct array response
     const attendanceData = response?.data || response;
     
@@ -176,13 +171,12 @@ export const fetchRecentAttendance = async (
       return true;
     });
 
-    
     return validRecords.map((record, index) => {
       try {
         return transformAttendanceRecord(record);
       } catch (error) {
         console.error(`Error transforming record at index ${index}:`, record, error);
-        // Return a minimal valid record instead of failing completely
+        // Return a complete valid record instead of failing completely
         return {
           id: record.id || index,
           employeeId: record.employee_id || record.employeeId || 0,
@@ -190,10 +184,11 @@ export const fetchRecentAttendance = async (
           employeeCode: "N/A",
           date: new Date().toISOString().split("T")[0],
           clockIn: '',
-          clockOut: null,
+          clockOut: '', // Fixed: empty string instead of null
           status: 'absent' as const,
-          hoursWorked: null,
+          hoursWorked: 0, // Fixed: 0 instead of null
           shiftType: "regular",
+          position: "N/A",
           location: "Remote",
           method: 'manual' as const,
         };
@@ -224,7 +219,6 @@ export const fetchAttendanceChartData = async (
       },
       token
     );
-
 
     if (!response) {
       throw new Error('Failed to fetch attendance chart data');

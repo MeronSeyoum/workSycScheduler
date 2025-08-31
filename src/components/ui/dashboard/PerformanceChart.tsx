@@ -26,8 +26,8 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({
     const validEmployees = employees.filter((emp) => emp?.id);
 
     return validEmployees.slice(0, 5).map((emp) => {
-      const firstName = emp?.user?.first_name || "Unknown";
-      const lastName = emp?.user?.last_name || "Employee";
+      const firstName = emp?.user?.name || "Unknown";
+      // const lastName = emp?.user?.last_name || "Employee";
 
       const empShifts = shifts.filter((shift) => {
         return (
@@ -45,7 +45,7 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({
       const totalShifts = empShifts.length;
 
       return {
-        name: `${firstName} ${lastName}`,
+        name: `${firstName} `,
         completed: completedShifts,
         missed: missedShifts,
         rating:
