@@ -3,6 +3,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Clock, MapPin, Users, BarChart3, CheckCircle, QrCode, Calendar, Bell, DollarSign, MapPinned, FileText, TrendingUp, Menu, X } from 'lucide-react';
+// Define a type for the color keys
+type ColorKey = 'green' | 'blue' | 'gray';
+
+interface Employee {
+  name: string;
+  location: string;
+  status: string;
+  color: ColorKey; // Use the specific type here
+}
+
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -13,12 +23,36 @@ export default function Home() {
     setMounted(true);
   }, []);
 
-  // Memoize data to prevent unnecessary re-renders
-  const employeeData = useMemo(() => [
-    { name: "Sarah Johnson", location: "Main Store • 8:15 AM", status: "Active", color: "green" },
-    { name: "Mike Chen", location: "Warehouse • Break until 2:30 PM", status: "Break", color: "blue" },
-    { name: "Alex Rivera", location: "Off Today • Next: Tomorrow 9 AM", status: "Off", color: "gray" }
-  ], []);
+  // Color mapping for consistent styling
+  const colorMap = {
+    green: { 
+      bg: 'bg-green-500/20', 
+      border: 'border-green-400/30', 
+      text: 'text-green-300', 
+      badge: 'bg-green-400/20',
+      icon: 'text-green-300'
+    },
+    blue: { 
+      bg: 'bg-blue-500/20', 
+      border: 'border-blue-400/30', 
+      text: 'text-blue-300', 
+      badge: 'bg-blue-400/20',
+      icon: 'text-blue-300'
+    },
+    gray: { 
+      bg: 'bg-gray-500/20', 
+      border: 'border-gray-400/30', 
+      text: 'text-gray-300', 
+      badge: 'bg-gray-400/20',
+      icon: 'text-gray-300'
+    }
+  };
+
+const employeeData = useMemo((): Employee[] => [
+  { name: "Sarah Johnson", location: "Main Store • 8:15 AM", status: "Active", color: "green" },
+  { name: "Mike Chen", location: "Warehouse • Break until 2:30 PM", status: "Break", color: "blue" },
+  { name: "Alex Rivera", location: "Off Today • Next: Tomorrow 9 AM", status: "Off", color: "gray" }
+], []);
 
   const adminFeatures = useMemo(() => [
     { icon: <Calendar className="w-6 h-6 lg:w-8 lg:h-8" />, title: "Smart Scheduling", desc: "Create and manage employee shifts with drag-and-drop simplicity" },
@@ -42,14 +76,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900 relative overflow-hidden">
-      {/* Optimized Background Elements - Reduced complexity for mobile */}
+      {/* Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-20 -right-32 w-72 h-72 lg:w-96 lg:h-96 rounded-full bg-gradient-to-br from-teal-200/15 via-cyan-300/10 to-blue-200/8 backdrop-blur-3xl opacity-70"></div>
         <div className="absolute bottom-20 -left-32 w-64 h-64 lg:w-80 lg:h-80 bg-gradient-to-tr from-teal-300/20 via-emerald-200/10 to-cyan-300/15 backdrop-blur-3xl rounded-full opacity-60"></div>
         <div className="hidden lg:block absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 lg:w-72 lg:h-72 bg-gradient-to-r from-blue-200/10 via-teal-200/15 to-cyan-200/10 backdrop-blur-3xl rounded-3xl rotate-45 opacity-50"></div>
       </div>
 
-      {/* Responsive Navigation */}
+      {/* Navigation */}
       <header className="sticky top-0 z-50 bg-white/5 backdrop-blur-xl border-b border-white/10">
         <nav className="flex justify-between items-center p-4 max-w-7xl mx-auto">
           <div className="flex items-center gap-3">
@@ -63,11 +97,15 @@ export default function Home() {
           <div className="hidden md:flex gap-4">
             <button 
               onClick={() => router.push('/login')}
-              className="text-white/90 hover:bg-white/10 rounded-full px-4 sm:px-6 lg:px-8 py-2 border border-white/20 backdrop-blur-xl transition-all duration-300"
+              className="text-white/90 hover:text-white hover:bg-white/10 rounded-full px-4 sm:px-6 lg:px-8 py-2 border border-white/20 backdrop-blur-xl transition-all duration-300"
+              aria-label="Sign in"
             >
               Sign In
             </button>
-            <button className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white rounded-full px-4 sm:px-6 lg:px-8 py-2 transition-all duration-300 transform hover:-translate-y-0.5">
+            <button 
+              className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white rounded-full px-4 sm:px-6 lg:px-8 py-2 transition-all duration-300 transform hover:-translate-y-0.5"
+              aria-label="Start free trial"
+            >
               Start Free Trial
             </button>
           </div>
@@ -91,11 +129,11 @@ export default function Home() {
                   setMobileMenuOpen(false);
                   router.push('/login');
                 }}
-                className="w-full text-white/90 hover:bg-white/10 rounded-full px-6 py-3 border border-white/20 backdrop-blur-xl transition-all duration-300"
+                className="w-full text-white/90 hover:text-white hover:bg-white/10 rounded-full px-6 py-3 border border-white/20 backdrop-blur-xl transition-all duration-300"
               >
                 Sign In
               </button>
-              <button className="w-full bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-full px-6 py-3 transition-all duration-300">
+              <button className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white rounded-full px-6 py-3 transition-all duration-300">
                 Start Free Trial
               </button>
             </div>
@@ -103,36 +141,36 @@ export default function Home() {
         )}
       </header>
 
-      {/* Hero Section - Responsive */}
+      {/* Hero Section */}
       <main className="relative z-10">
         <section className="max-w-7xl mx-auto px-4 lg:px-6 py-8 sm:py-12 lg:py-24">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
             {/* Hero Content */}
             <div className="text-center lg:text-left order-2 lg:order-1">
               <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold mb-4 sm:mb-6 lg:mb-8 leading-tight">
-                <span className="bg-gradient-to-r from-white via-teal-100 to-cyan-100 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-teal-300 to-cyan-300 bg-clip-text text-transparent">
                   Smart Workforce
                 </span>
                 <br />
-                <span className="text-white/95">Management</span>
+                <span className="text-white">Management</span>
               </h1>
-              <p className="text-sm sm:text-base lg:text-lg text-white/80 mb-6 sm:mb-8 lg:mb-10 leading-relaxed max-w-2xl mx-auto lg:mx-0">
+              <p className="text-base sm:text-lg lg:text-lg text-white/80 mb-6 sm:mb-8 lg:mb-10 leading-relaxed max-w-2xl mx-auto lg:mx-0">
                 WorkSync gives you all the tools to manage your workforce seamlessly—from 
                 smart scheduling and QR attendance to geofencing and detailed reporting—streamlining
                  daily operations and keeping your business running smoothly wherever your team works
               </p>
               
-              {/* CTA Buttons - Responsive */}
+              {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6 sm:mb-8 lg:mb-12 justify-center lg:justify-start">
                 <button className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white rounded-full px-6 sm:px-8 lg:px-10 py-3 text-sm sm:text-base font-semibold transition-all duration-300 transform hover:-translate-y-1">
                   Start Free 30-Day Trial
                 </button>
-                <button className="border-2 border-white/30 text-white hover:bg-white/10 rounded-full px-6 sm:px-8 lg:px-10 py-3 text-sm sm:text-base font-semibold backdrop-blur-xl transition-all duration-300">
+                <button className="border-2 border-white/30 text-white/90 hover:text-white hover:bg-white/10 rounded-full px-6 sm:px-8 lg:px-10 py-3 text-sm sm:text-base font-semibold backdrop-blur-xl transition-all duration-300">
                   Watch Demo
                 </button>
               </div>
               
-              {/* Trust Indicators - Responsive Grid */}
+              {/* Trust Indicators */}
               <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:gap-8 pt-6 max-w-md mx-auto lg:mx-0">
                 <div className="text-center">
                   <div className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-teal-300 to-cyan-300 bg-clip-text text-transparent">99.9%</div>
@@ -149,7 +187,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Dashboard Mockup - Responsive */}
+            {/* Dashboard Mockup */}
             <div className="relative order-2 lg:order-2 mb-8 lg:mb-0">
               <div className="bg-white/10 backdrop-blur-xl rounded-2xl lg:rounded-3xl p-4 lg:p-8 border border-white/20 shadow-xl">
                 <div className="space-y-4 lg:space-y-6">
@@ -160,34 +198,37 @@ export default function Home() {
                     <span className="text-lg lg:text-xl font-semibold text-white">Admin Dashboard</span>
                   </div>
                   
-                  {/* Employee Cards - Responsive */}
+                  {/* Employee Cards */}
                   <div className="space-y-3 lg:space-y-4">
-                    {employeeData.map((employee, index) => (
-                      <div key={index} className={`flex items-center justify-between p-3 lg:p-4 bg-${employee.color}-500/20 backdrop-blur-xl rounded-xl border border-${employee.color}-400/30`}>
-                        <div className="flex items-center gap-3 lg:gap-4 min-w-0 flex-1">
-                          <div className={`w-8 h-8 lg:w-10 lg:h-10 bg-${employee.color}-400/30 backdrop-blur-xl rounded-full flex items-center justify-center flex-shrink-0`}>
-                            {employee.status === "Active" && <CheckCircle className="w-4 h-4 lg:w-5 lg:h-5 text-green-300" />}
-                            {employee.status === "Break" && <Clock className="w-4 h-4 lg:w-5 lg:h-5 text-blue-300" />}
-                            {employee.status === "Off" && <Users className="w-4 h-4 lg:w-5 lg:h-5 text-gray-300" />}
+                    {employeeData.map((employee, index) => {
+                      const colors = colorMap[employee.color];
+                      return (
+                        <div key={index} className={`flex items-center justify-between p-3 lg:p-4 ${colors.bg} backdrop-blur-xl rounded-xl border ${colors.border}`}>
+                          <div className="flex items-center gap-3 lg:gap-4 min-w-0 flex-1">
+                            <div className={`w-8 h-8 lg:w-10 lg:h-10 ${colors.badge} backdrop-blur-xl rounded-full flex items-center justify-center flex-shrink-0`}>
+                              {employee.status === "Active" && <CheckCircle className="w-4 h-4 lg:w-5 lg:h-5 text-green-300" />}
+                              {employee.status === "Break" && <Clock className="w-4 h-4 lg:w-5 lg:h-5 text-blue-300" />}
+                              {employee.status === "Off" && <Users className="w-4 h-4 lg:w-5 lg:h-5 text-gray-300" />}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <span className="text-white font-medium text-sm lg:text-base block truncate">{employee.name}</span>
+                              <div className={`${colors.text} text-xs lg:text-sm truncate`}>{employee.location}</div>
+                            </div>
                           </div>
-                          <div className="min-w-0 flex-1">
-                            <span className="text-white font-medium text-sm lg:text-base block truncate">{employee.name}</span>
-                            <div className={`text-${employee.color}-200 text-xs lg:text-sm truncate`}>{employee.location}</div>
-                          </div>
+                          <span className={`${colors.text} ${colors.badge} px-2 lg:px-3 py-1 rounded-full text-xs lg:text-sm font-medium flex-shrink-0`}>
+                            {employee.status}
+                          </span>
                         </div>
-                        <span className={`text-${employee.color}-300 bg-${employee.color}-400/20 px-2 lg:px-3 py-1 rounded-full text-xs lg:text-sm font-medium flex-shrink-0`}>
-                          {employee.status}
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
-                  {/* QR Location - Responsive */}
+                  {/* QR Location */}
                   <div className="mt-6 lg:mt-8 p-4 lg:p-5 bg-teal-500/20 backdrop-blur-xl rounded-xl border border-teal-400/30">
                     <div className="flex items-center justify-between">
                       <div className="min-w-0 flex-1">
                         <div className="text-white font-medium text-sm lg:text-base">Main Store Location</div>
-                        <div className="text-teal-200 text-xs lg:text-sm">15 employees scheduled today</div>
+                        <div className="text-teal-300 text-xs lg:text-sm">15 employees scheduled today</div>
                       </div>
                       <div className="w-12 h-12 lg:w-14 lg:h-14 bg-white/90 backdrop-blur-xl border-2 border-teal-400 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
                         <QrCode className="w-6 h-6 lg:w-8 lg:h-8 text-teal-600" />
@@ -200,14 +241,14 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Features Section - Responsive Grid */}
+        {/* Features Section */}
         <section className="max-w-7xl mx-auto px-4 lg:px-6 pb-12 lg:pb-24">
           <div className="text-center mb-8 sm:mb-12 lg:mb-16">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4 lg:mb-6">Complete Workforce Management Solution</h2>
-            <p className="text-base sm:text-lg lg:text-xl text-white/70 max-w-3xl mx-auto">Everything you need to manage your team efficiently with cutting-edge technology</p>
+            <p className="text-lg sm:text-xl lg:text-xl text-white/80 max-w-3xl mx-auto">Everything you need to manage your team efficiently with cutting-edge technology</p>
           </div>
 
-          {/* Admin Features - Responsive */}
+          {/* Admin Features */}
           <div className="mb-8 sm:mb-12 lg:mb-20">
             <h3 className="text-xl lg:text-2xl font-bold text-white mb-6 lg:mb-8 text-center">🎯 Admin Panel Features</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
@@ -215,13 +256,13 @@ export default function Home() {
                 <div key={index} className="bg-white/10 backdrop-blur-xl p-4 lg:p-6 rounded-2xl border border-white/20 hover:border-teal-400/50 shadow-xl hover:shadow-2xl transition-all duration-300 group">
                   <div className="text-teal-300 mb-3 lg:mb-4 group-hover:scale-110 transition-transform duration-300">{feature.icon}</div>
                   <h4 className="text-base lg:text-lg font-semibold text-white mb-2">{feature.title}</h4>
-                  <p className="text-white/70 text-sm">{feature.desc}</p>
+                  <p className="text-white/80 text-sm">{feature.desc}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Employee Features - Responsive */}
+          {/* Employee Features */}
           <div className="mb-8 sm:mb-12 lg:mb-20">
             <h3 className="text-xl lg:text-2xl font-bold text-white mb-6 lg:mb-8 text-center">📱 Employee Mobile Experience</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
@@ -229,14 +270,14 @@ export default function Home() {
                 <div key={index} className="bg-white/10 backdrop-blur-xl p-4 lg:p-6 rounded-2xl border border-white/20 hover:border-cyan-400/50 shadow-xl hover:shadow-2xl transition-all duration-300 group">
                   <div className="text-cyan-300 mb-3 lg:mb-4 group-hover:scale-110 transition-transform duration-300">{feature.icon}</div>
                   <h4 className="text-base lg:text-lg font-semibold text-white mb-2">{feature.title}</h4>
-                  <p className="text-white/70 text-sm">{feature.desc}</p>
+                  <p className="text-white/80 text-sm">{feature.desc}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* CTA Section - Responsive */}
+        {/* CTA Section */}
         <section className="relative py-12 lg:py-24 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-teal-600/30 via-cyan-500/20 to-blue-500/30 backdrop-blur-3xl"></div>
           <div className="relative z-10 max-w-5xl mx-auto px-4 lg:px-6 text-center">
@@ -244,23 +285,23 @@ export default function Home() {
               <h2 className="text-2xl sm:text-3xl lg:text-5xl font-bold text-white mb-4 lg:mb-6">
                 Transform Your Business Today
               </h2>
-              <p className="text-sm sm:text-base lg:text-xl text-white/80 mb-6 sm:mb-8 lg:mb-10 max-w-3xl mx-auto leading-relaxed">
+              <p className="text-base sm:text-lg lg:text-xl text-white/80 mb-6 sm:mb-8 lg:mb-10 max-w-3xl mx-auto leading-relaxed">
                 Join local businesses using WorkSync to streamline workforce management, reduce payroll errors, and boost productivity by 40%
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-6 lg:mb-8">
                 <button className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white rounded-full px-6 sm:px-8 lg:px-12 py-3 lg:py-4 text-sm sm:text-base lg:text-lg font-semibold transition-all duration-300 transform hover:-translate-y-1">
                   Start Your Free Trial
                 </button>
-                <button className="border-2 border-white/30 text-white hover:bg-white/10 rounded-full px-6 sm:px-8 lg:px-12 py-3 lg:py-4 text-sm sm:text-base lg:text-lg font-semibold backdrop-blur-xl transition-all duration-300">
+                <button className="border-2 border-white/30 text-white/90 hover:text-white hover:bg-white/10 rounded-full px-6 sm:px-8 lg:px-12 py-3 lg:py-4 text-sm sm:text-base lg:text-lg font-semibold backdrop-blur-xl transition-all duration-300">
                   Schedule Demo
                 </button>
               </div>
-              <p className="text-white/60 text-xs sm:text-sm">No credit card required • Setup in 5 minutes • Cancel anytime</p>
+              <p className="text-white/70 text-xs sm:text-sm">No credit card required • Setup in 5 minutes • Cancel anytime</p>
             </div>
           </div>
         </section>
 
-        {/* Mobile App Showcase - Responsive */}
+        {/* Mobile App Showcase */}
         <section className="max-w-7xl mx-auto px-4 lg:px-6 py-12 lg:py-24">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
             <div className="order-2 lg:order-1">
@@ -271,14 +312,14 @@ export default function Home() {
                     <div className="bg-teal-500/20 backdrop-blur-xl p-2 lg:p-3 rounded-xl text-teal-300 text-lg lg:text-xl font-bold min-w-[40px] sm:min-w-[48px] lg:min-w-[60px] text-center flex-shrink-0">{item.step}</div>
                     <div>
                       <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-white mb-2">{item.title}</h3>
-                      <p className="text-white/70 text-xs sm:text-sm lg:text-base">{item.desc}</p>
+                      <p className="text-white/80 text-xs sm:text-sm lg:text-base">{item.desc}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
             
-            {/* Mobile Mockup - Responsive */}
+            {/* Mobile Mockup */}
             <div className="relative order-1 lg:order-2 flex justify-center mb-8 lg:mb-0">
               <div className="relative max-w-xs w-full">
                 <div className="absolute -inset-4 bg-gradient-to-r from-teal-400/20 to-cyan-400/20 rounded-3xl blur-2xl"></div>
@@ -322,7 +363,7 @@ export default function Home() {
         </section>
       </main>
 
-      {/* Footer - Responsive */}
+      {/* Footer */}
       <footer className="bg-white/5 backdrop-blur-xl border-t border-white/10 py-8 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 lg:px-6">
           <div className="flex flex-col items-center mb-8 lg:mb-12">
@@ -333,7 +374,7 @@ export default function Home() {
               <span className="text-xl lg:text-2xl font-bold text-white">WorkSync</span>
             </div>
           </div> 
-          <div className="border-t border-white/10 pt-6 lg:pt-8 text-center text-white/60 text-sm lg:text-base">
+          <div className="border-t border-white/10 pt-6 lg:pt-8 text-center text-white/70 text-sm lg:text-base">
             © {new Date().getFullYear()} WorkSync Local. Empowering local businesses with smart workforce management.
           </div>
         </div>

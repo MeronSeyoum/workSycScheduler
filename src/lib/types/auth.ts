@@ -37,6 +37,7 @@ export interface AuthResponse {
 export interface ApiResponse<T> {
   message?: string;
   data?: T;
+   warnings?: string[];
   statusCode?: number;
   status?: number; // Add status property
 }

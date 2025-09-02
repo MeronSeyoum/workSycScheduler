@@ -194,7 +194,7 @@ export default function LoginPage() {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-blue-200/8 via-teal-200/10 to-cyan-200/6 backdrop-blur-2xl rounded-3xl rotate-45"></div>
       </div>
 
-      <div className="relative z-10 min-h-screen flex max-w-7xl mx-auto gap-10 ">
+      <div className="relative z-10 min-h-screen flex max-w-7xl mx-auto gap-40 ">
         {/* Left Panel - Features */}
         <div className="hidden lg:flex lg:w-1/2 items-center justify-center gap-4 py-8 sm:py-12 lg:py-12">
           <div className="w-full max-w-2xl">
@@ -226,13 +226,13 @@ export default function LoginPage() {
         </div>
 
         {/* Right Panel - Login Form */}
-        <div className="w-full lg:w-1/2 flex-col items-center justify-center p-4 lg:p-10 ">
-       <div className="hidden lg:flex items-center gap-3 mb-4 lg:pt-16">
-  <h2 className="text-3xl font-bold text-white mb-4">Welcome Back</h2>
-</div>
+        <div className="w-full lg:w-3/8  flex-col items-center justify-center p-4 lg:p-10  ">
+          <div className="hidden lg:flex items-center gap-3 mb-4 lg:pt-16">
+            <h2 className="text-3xl font-bold text-white mb-4">Welcome Back</h2>
+          </div>
           <div className="w-full max-w-lg">
             {/* Mobile Header */}
-            <div className="lg:hidden flex items-center justify-center gap-3 lg:pt-0 pt-20 mb-8">
+            <div className="lg:hidden flex items-center justify-center gap-3  my-8">
               <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
                 <Clock className="w-5 h-5 text-white" />
               </div>

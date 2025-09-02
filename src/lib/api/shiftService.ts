@@ -2,96 +2,26 @@
 import { fetchWithAuth } from './apiBase';
 import {
   CreateShiftWithEmployeesDto,
-  EmployeeShift,
-  Shift,
+  
   ShiftWithEmployees,
   UpdateShiftDto,
   // RecurringShiftDto,
-  ShiftStatus
+
+
 } from "@/lib/types/shift";
 
-// Helper function to transform backend response to ShiftWithEmployees
-const transformShiftResponse = (responseData: {
-  shift: Shift;
-  employeeShifts: (EmployeeShift & {
-    employee?: {
-      id: number;
-      position: string;
-      employee_code: string;
-      hire_date: string;
-      user?: {
-        first_name: string;
-        last_name: string;
-        email: string;
-      };
-    };
-    assigned_by_user?: {
-      id: number;
-      first_name: string;
-      last_name: string;
-    };
-  })[];
-  warnings?: string[];
-}): ShiftWithEmployees => {
-  // Transform employee shifts to the expected format
-  const employees = responseData.employeeShifts.map(es => ({
-    assignment_id: es.id,
-    status: es.status as ShiftStatus,
-    notes: es.notes || null,
-    assigned_by: es.assigned_by_user ? {
-      id: es.assigned_by_user.id,
-      first_name: es.assigned_by_user.first_name,
-      last_name: es.assigned_by_user.last_name
-    } : {
-      id: es.assigned_by || 0,
-      first_name: 'Unknown',
-      last_name: 'User'
-    },
-    employee: {
-      id: es.employee?.id || es.employee_id,
-      position: es.employee?.position || 'Unknown',
-      employee_code: es.employee?.employee_code || 'N/A',
-      hire_date: es.employee?.hire_date || new Date().toISOString(),
-      user: {
-        first_name: es.employee?.user?.first_name || 'Unknown',
-        last_name: es.employee?.user?.last_name || 'Employee',
-        email: es.employee?.user?.email || 'unknown@example.com'
-      }
-    }
-  }));
 
-  return {
-    ...responseData.shift,
-    client: {
-      id: 0, // This will need to be populated from the shift data or another source
-      business_name: 'Unknown Client',
-      email: 'unknown@example.com',
-      phone: '000-000-0000',
-      contact_person: 'Unknown Contact',
-      location_address: {
-        city: 'Unknown',
-        state: 'Unknown',
-        street: 'Unknown Street',
-        country: 'Unknown',
-        postal_code: '00000'
-      },
-      status: 'active',
-      notes: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    },
-    employee_shifts: responseData.employeeShifts.map(es => ({
-      id: es.id,
-      employee_id: es.employee_id,
-      shift_id: es.shift_id,
-      assigned_by: es.assigned_by || 0,
-      status: es.status as ShiftStatus,
-      notes: es.notes || null
-    })),
-    employees: employees,
-    // warnings: responseData.warnings
-  };
-};
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message?: string;
+  data?: T;
+  warnings?: string[];
+}
+
+// Helper function to transform backend response to ShiftWithEmployees
+
+
+
 
 export const fetchShifts = async (
   params: {
@@ -147,25 +77,68 @@ export const getShiftById = async (
   return response.data!;
 };
 
+// export const createShift = async (
+//   shiftData: CreateShiftWithEmployeesDto, 
+//   token: string
+// ): Promise<ShiftWithEmployees> => {
+//   const payload = {
+//     client_id: Number(shiftData.client_id),
+//     date: shiftData.date,
+//     start_time: shiftData.start_time,
+//     end_time: shiftData.end_time,
+//     shift_type: shiftData.shift_type || 'regular',
+//     employee_ids: shiftData.employee_ids.map(id => Number(id)),
+//     notes: shiftData.notes || undefined
+//   };
+
+//   const response = await fetchWithAuth<{
+//     shift: Shift;
+//     employeeShifts: EmployeeShift[];
+//     warnings?: string[];
+//   }>(
+//     '/shifts',
+//     {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         'Authorization': `Bearer ${token}`
+//       },
+//       body: JSON.stringify(payload)
+//     },
+//     token
+//   );
+//   if (!response.data) {
+//     throw new Error(response.message || 'Failed to create shift');
+//   }
+
+//   // Handle partial success with warnings
+//   if (response.data.warnings && response.data.warnings.length > 0) {
+//     console.warn('Shift created with warnings:', response.data.warnings);
+//   }
+
+//   // Transform the backend response to match ShiftWithEmployees type
+//   return transformShiftResponse(response.data);
+// };
+export interface CreateShiftResult {
+  shift: ShiftWithEmployees;
+  warnings?: string[];
+}
+
 export const createShift = async (
   shiftData: CreateShiftWithEmployeesDto, 
   token: string
-): Promise<ShiftWithEmployees> => {
+): Promise<CreateShiftResult> => {
   const payload = {
     client_id: Number(shiftData.client_id),
     date: shiftData.date,
     start_time: shiftData.start_time,
     end_time: shiftData.end_time,
     shift_type: shiftData.shift_type || 'regular',
-    employee_ids: shiftData.employee_ids.map(id => Number(id)),
-    notes: shiftData.notes || undefined
+    employee_ids: shiftData.employee_ids,
+    notes: shiftData.notes
   };
 
-  const response = await fetchWithAuth<{
-    shift: Shift;
-    employeeShifts: EmployeeShift[];
-    warnings?: string[];
-  }>(
+  const response = await fetchWithAuth<ShiftWithEmployees>(
     '/shifts',
     {
       method: 'POST',
@@ -181,16 +154,18 @@ export const createShift = async (
   if (!response.data) {
     throw new Error(response.message || 'Failed to create shift');
   }
-
-  // Handle partial success with warnings
-  if (response.data.warnings && response.data.warnings.length > 0) {
-    console.warn('Shift created with warnings:', response.data.warnings);
-  }
-
-  // Transform the backend response to match ShiftWithEmployees type
-  return transformShiftResponse(response.data);
+  
+  return {
+    shift: response.data,
+    warnings: response.warnings
+  };
 };
 
+
+// Add this utility type if you don't have it
+
+
+// Remove the transformShiftResponse function since it's no longer needed
 export const updateShift = async (
   id: number,
   shiftData: UpdateShiftDto,

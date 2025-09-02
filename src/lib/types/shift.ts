@@ -8,12 +8,12 @@ interface Timestamps {
   updated_at?: string;
 }
 
-// Shift Interface
+// Base Shift Interface
 export interface Shift extends Timestamps {
   id: number;
-  date: string; // YYYY-MM-DD
-  start_time: string; // HH:mm
-  end_time: string; // HH:mm
+  date: string;
+  start_time: string;
+  end_time: string;
   client_id: number;
   created_by: number;
   shift_type: ShiftType;
@@ -33,7 +33,7 @@ export interface EmployeeShift extends Timestamps {
 
 // DTOs for API Operations
 export interface CreateShiftWithEmployeesDto {
-  client_id: number;
+  client_id: string;
   date: string;
   start_time: string;
   end_time: string;
@@ -49,27 +49,53 @@ export interface UpdateShiftDto {
   notes?: string;
 }
 
+// Common employee assignment structure
+export interface ShiftEmployeeAssignment {
+  assignment_id: number;
+  status: ShiftStatus;
+  notes: string | null;
+  assigned_by: {
+    id: number;
+    first_name: string;
+    last_name: string;
+  };
+  employee: {
+    id: number;
+    position: string;
+    employee_code: string;
+    hire_date: string;
+    user: {
+      first_name: string;
+      last_name: string;
+      email: string;
+    };
+  };
+}
 
+// Unified Shift with Employees type (use this for both create and read operations)
 export interface ShiftWithEmployees extends Shift {
+  
+  employees: ShiftEmployeeAssignment[];
   client: {
     id: number;
     business_name: string;
-    email: string;
-    phone: string;
-    contact_person: string;
-    location_address: {
+    email?: string;
+    phone?: string;
+    contact_person?: string;
+    location_address?: {
       city: string;
       state: string;
       street: string;
       country: string;
       postal_code: string;
     };
-    status: string;
-    notes: string | null;
-    createdAt: string;
-    updatedAt: string;
+    status?: string;
+    notes?: string | null;
+    createdAt?: string;
+    updatedAt?: string;
   };
-  employee_shifts: Array<{
+  // Keep employee_shifts for backward compatibility if needed
+  employee_shifts?: Array<{
     id: number;
     employee_id: number;
     shift_id: number;
@@ -77,69 +103,8 @@ export interface ShiftWithEmployees extends Shift {
     status: ShiftStatus;
     notes: string | null;
   }>;
-  employees: Array<{
-    assignment_id: number;
-    status: ShiftStatus;
-    notes: string | null;
-    assigned_by: {
-      id: number;
-      first_name: string;
-      last_name: string;
-    };
-    employee: {
-      id: number;
-      position: string;
-      employee_code: string;
-      hire_date: string;
-      user: {
-        first_name: string;
-        last_name: string;
-        email: string;
-      };
-    };
-  }>;
+
 }
-// export interface ShiftWithEmployees extends Shift {
-//   client: {
-//     id: number;
-//     business_name: string;
-//   };
-//   employee_shifts: Array<{
-//     employee_id: number;
-//     status: ShiftStatus;
-//     // other fields...
-//   }>;
-//   employees: {
-//     id: number;
-//     employee_id: number;
-//     shift_id: number;
-//     assigned_by: number;
-//     status: ShiftStatus;
-//     notes: string | null;
-//     created_at: string;
-//     updated_at: string;
-//     employee: {
-//       id: number;
-//       user_id: number;
-//       employee_code: string;
-//       phone_number: string;
-//       position: string;
-//       profile_image_url: string | null;
-//       status: string;
-//       hire_date: string;
-//       termination_date: string | null;
-//       assigned_locations: string[];
-//       contact: {
-//         phone: string;
-//         emergencyContact: string;
-//         address: string;
-//       };
-//       user: {
-//         id: number;
-//         first_name: string;
-//         last_name: string;
-//         email: string;
-//       };
-//     };
-//   }[];
-// }
+
+// Alias for create operation response (optional - you can use ShiftWithEmployees everywhere)
+export type ShiftWithEmployeesCreate = ShiftWithEmployees;
