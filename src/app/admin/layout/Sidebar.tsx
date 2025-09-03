@@ -9,7 +9,6 @@ import {
   Calendar,
   MapPin,
   ClipboardList,
-  FileSpreadsheet,
   ChevronLeft,
   ChevronRight,
   QrCode,
@@ -27,13 +26,14 @@ const topNavItems = [
   { href: '/admin/shifts', icon: <Calendar className="h-5 w-5" />, label: 'Scheduling' },
   { href: '/admin/attendance', icon: <Clock className="h-5 w-5" />, label: 'Attendance' },
   { href: '/admin/users', icon: <MdAccountCircle className="h-5 w-5" />, label: 'User Management' },
+  { href: '/admin/shiftManager', icon: <Calendar className="h-5 w-5" />, label: 'Shift Manager' }
 ];
 
 // Reports section
 const reportsNavItems = [
-  { href: '/admin/reports/time', icon: <Clock className="h-5 w-5" />, label: 'Time Reports' },
+  { href: '/admin/reports/time', icon: <Clock className="h-5 w-5" />, label: 'Shift Reports' },
   { href: '/admin/reports/attendance', icon: <ClipboardList className="h-5 w-5" />, label: 'Attendance' },
-  { href: '/admin/reports/export', icon: <FileSpreadsheet className="h-5 w-5" />, label: 'Data Export' },
+  // { href: '/admin/reports/export', icon: <FileSpreadsheet className="h-5 w-5" />, label: 'Data Export' },
 ];
 
 // // Bottom navigation items

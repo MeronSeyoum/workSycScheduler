@@ -258,6 +258,16 @@ export default function AttendancePage() {
     <>
       {contextHolder}
       <div className="space-y-6 py-1">
+            {/* Right-aligned controls */}
+          <div className="flex lg:flex-row flex-col gap-3 w-full sm:w-auto items-start xs:items-center justify-end">
+       
+              <DateRangeAttendance
+              value={dateRange} 
+              onChange={setDateRange}
+              className="w-full xs:w-auto"
+            />
+           
+          </div>
         {/* Header with tabs and controls */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           {/* Tab buttons */}
@@ -297,20 +307,13 @@ export default function AttendancePage() {
             </button>
           </div>
 
-          {/* Right-aligned controls */}
-          <div className="flex lg:flex-row flex-col gap-3 w-full sm:w-auto items-start xs:items-center">
+        <div className="flex lg:flex-row flex-col gap-3 w-full sm:w-auto items-start xs:items-center justify-end">
         <ManualEntryModal
               employees={employees}
               onSuccess={fetchAttendanceData}
               locations={[]}
-            />   
-              <DateRangeAttendance
-              value={dateRange} 
-              onChange={setDateRange}
-              className="w-full xs:w-auto"
-            />
-           
-          </div>
+            />  
+            </div>
         </div>
 
         {/* Tab content */}

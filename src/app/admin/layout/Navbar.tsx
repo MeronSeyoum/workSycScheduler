@@ -22,6 +22,7 @@ const getPageTitle = (pathname: string) => {
     employees: 'Employee Management',
     attendance: 'Attendance Time Tracking',
     shifts: 'Multi-Location Shift Scheduler',
+    shiftManager: 'Shift Manager',
     clients: 'Client Management',
     users: 'User Management',
     qrcode: 'QR Code Management',

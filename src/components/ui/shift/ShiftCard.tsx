@@ -113,7 +113,7 @@ export const ShiftCard: React.FC<ShiftCardProps> = ({
   return (
     <div
       ref={ref}
-      className={`relative group p-3 mb-2 shadow-xs transition-all z-10
+      className={`relative group p-3 mb-2 shadow-xs transition-all 
                  border border-gray-100 hover:border-gray-200 bg-white hover:shadow-sm
                  hover:translate-y-[0px] transform duration-150
                  cursor-grab active:cursor-grabbing ${
