@@ -36,7 +36,7 @@ export const ScheduleGrid: React.FC<ScheduleGridProps> = ({
   getEmployeeFullName,
 }) => {
   return (
-    <div className="rounded-xl shadow-xs overflow-hidden bg-white border border-gray-200">
+    <div className="rounded-md shadow-xs overflow-hidden bg-white border border-gray-200">
       <div className="overflow-x-auto">
         <div
           className="grid"
@@ -47,7 +47,7 @@ export const ScheduleGrid: React.FC<ScheduleGridProps> = ({
           }}
         >
           {/* Table Header */}
-          <div className="bg-teal-600 p-3 font-semibold text-white border-r sticky left-0 flex items-center z-10">
+          <div className="bg-teal-600 p-3 font-semibold text-white border-r  left-0 flex items-center z-10">
             <MdDragIndicator className="text-teal-200 mr-2 text-lg" />
             <span>Employee</span>
           </div>
@@ -98,7 +98,7 @@ export const ScheduleGrid: React.FC<ScheduleGridProps> = ({
           {employees.map((employee) => (
             <React.Fragment key={employee.id}>
               {/* Employee Info Cell */}
-              <div className="flex items-center gap-3 p-3 border-b border-r border-gray-100 bg-white sticky left-0 hover:bg-gray-50 transition-colors shadow-sm z-0">
+              <div className="flex items-center gap-3 p-3 border-b border-r border-gray-100 bg-white  left-0 hover:bg-gray-50 transition-colors shadow-sm z-0">
                 <Avatar
                   className="bg-gradient-to-br from-teal-400 to-teal-600 text-white shadow-xs"
                   size="default"

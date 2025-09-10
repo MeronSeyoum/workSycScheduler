@@ -114,7 +114,7 @@ export default function AttendanceStats({
         return (
           <Card 
             key={card.type}
-            className={`border-l-4 ${card.colors.border} border-t-0 border-r-0 border-b-0 hover:shadow-md transition-shadow bg-white`}
+            className={`border-l-4 ${card.colors.border} border-t-0 border-r-0 border-b-0 hover:shadow-md transition-shadow bg-white `}
           >
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-sm font-medium text-gray-600">

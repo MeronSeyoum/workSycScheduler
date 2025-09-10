@@ -118,39 +118,44 @@ export default function AttendancePage() {
         end: format(dateRange.to, "yyyy-MM-dd"),
       });
 
-      const [summaryResponse, recentResponse, recentAttendanceSheetResponse, chartResponse] =
-        await Promise.allSettled([
-          api.attendanceService.fetchAttendanceSummary(
-            {
-              startDate: format(dateRange.from, "yyyy-MM-dd"),
-              endDate: format(dateRange.to, "yyyy-MM-dd"),
-            },
-            token
-          ),
-          api.attendanceService.fetchRecentAttendance(
-            {
-              startDate: format(dateRange.from, "yyyy-MM-dd"),
-              endDate: format(dateRange.to, "yyyy-MM-dd"),
-              limit: 5,
-            },
-            token
-          ),
+      const [
+        summaryResponse,
+        recentResponse,
+        recentAttendanceSheetResponse,
+        chartResponse,
+      ] = await Promise.allSettled([
+        api.attendanceService.fetchAttendanceSummary(
+          {
+            startDate: format(dateRange.from, "yyyy-MM-dd"),
+            endDate: format(dateRange.to, "yyyy-MM-dd"),
+          },
+          token
+        ),
+        api.attendanceService.fetchRecentAttendance(
+          {
+            startDate: format(dateRange.from, "yyyy-MM-dd"),
+            endDate: format(dateRange.to, "yyyy-MM-dd"),
+            limit: 5,
+          },
+          token
+        ),
 
-          api.attendanceService.fetchRecentAttendance(
-            {
-               startDate: format(dateRange.from, "yyyy-MM-dd"),
-              endDate: format(dateRange.to, "yyyy-MM-dd"),
-              limit: 100,
-            }, token
-          ),
-          api.attendanceService.fetchAttendanceChartData(
-            {
-              startDate: format(dateRange.from, "yyyy-MM-dd"),
-              endDate: format(dateRange.to, "yyyy-MM-dd"),
-            },
-            token
-          ),
-        ]);
+        api.attendanceService.fetchRecentAttendance(
+          {
+            startDate: format(dateRange.from, "yyyy-MM-dd"),
+            endDate: format(dateRange.to, "yyyy-MM-dd"),
+            limit: 100,
+          },
+          token
+        ),
+        api.attendanceService.fetchAttendanceChartData(
+          {
+            startDate: format(dateRange.from, "yyyy-MM-dd"),
+            endDate: format(dateRange.to, "yyyy-MM-dd"),
+          },
+          token
+        ),
+      ]);
 
       // Handle each response safely
       const summary =
@@ -159,8 +164,10 @@ export default function AttendancePage() {
           : getDefaultAttendanceSummary();
       const recent =
         recentResponse.status === "fulfilled" ? recentResponse.value : [];
-        const recentAttendanceSheet =
-        recentAttendanceSheetResponse.status === "fulfilled" ? recentAttendanceSheetResponse.value : [];
+      const recentAttendanceSheet =
+        recentAttendanceSheetResponse.status === "fulfilled"
+          ? recentAttendanceSheetResponse.value
+          : [];
       const chart =
         chartResponse.status === "fulfilled"
           ? chartResponse.value
@@ -244,7 +251,7 @@ export default function AttendancePage() {
             (attendanceData.summary.present +
               attendanceData.summary.absent +
               attendanceData.summary.late || 1)) *
-          100 ,
+          100,
         onTimePercentage:
           ((attendanceData.summary.present - attendanceData.summary.late) /
             (attendanceData.summary.present +
@@ -257,17 +264,15 @@ export default function AttendancePage() {
   return (
     <>
       {contextHolder}
-      <div className="space-y-6 py-1">
-            {/* Right-aligned controls */}
-          <div className="flex lg:flex-row flex-col gap-3 w-full sm:w-auto items-start xs:items-center justify-end">
-       
-              <DateRangeAttendance
-              value={dateRange} 
-              onChange={setDateRange}
-              className="w-full xs:w-auto"
-            />
-           
-          </div>
+      <div className="space-y-3 ">
+        {/* Right-aligned controls */}
+        <div className="flex lg:flex-row flex-col gap-3 w-full sm:w-auto items-start xs:items-center justify-end">
+          <DateRangeAttendance
+            value={dateRange}
+            onChange={setDateRange}
+            className="w-full xs:w-auto"
+          />
+        </div>
         {/* Header with tabs and controls */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           {/* Tab buttons */}
@@ -307,13 +312,13 @@ export default function AttendancePage() {
             </button>
           </div>
 
-        <div className="flex lg:flex-row flex-col gap-3 w-full sm:w-auto items-start xs:items-center justify-end">
-        <ManualEntryModal
+          <div className="flex lg:flex-row flex-col gap-3 w-full sm:w-auto items-start xs:items-center justify-end">
+            <ManualEntryModal
               employees={employees}
               onSuccess={fetchAttendanceData}
               locations={[]}
-            />  
-            </div>
+            />
+          </div>
         </div>
 
         {/* Tab content */}
@@ -335,7 +340,9 @@ export default function AttendancePage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 transition-all hover:shadow-md">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-semibold text-gray-800">Today's Status</h3>
+                    <h3 className="text-base font-semibold text-gray-800">
+                      Today&apo;s Status
+                    </h3>
                     <div className="p-2 bg-blue-50 rounded-lg">
                       <Clock className="h-5 w-5 text-blue-600" />
                     </div>
@@ -345,7 +352,9 @@ export default function AttendancePage() {
                   ) : (
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Clocked In:</span>
+                        <span className="text-sm text-gray-600">
+                          Clocked In:
+                        </span>
                         <span className="text-base font-medium text-gray-900">
                           {attendanceData.summary?.clockedInToday || 0}
                         </span>
@@ -368,7 +377,9 @@ export default function AttendancePage() {
 
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 transition-all hover:shadow-md">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-semibold text-gray-800">Weekly Overview</h3>
+                    <h3 className="text-base font-semibold text-gray-800">
+                      Weekly Overview
+                    </h3>
                     <div className="p-2 bg-green-50 rounded-lg">
                       <CalendarCheck className="h-5 w-5 text-green-600" />
                     </div>
@@ -378,7 +389,9 @@ export default function AttendancePage() {
                   ) : (
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Average Hours:</span>
+                        <span className="text-sm text-gray-600">
+                          Average Hours:
+                        </span>
                         <span className="text-base font-medium text-gray-900">
                           {attendanceData.summary?.avgWeeklyHours?.toFixed(1) ||
                             0}
@@ -386,13 +399,17 @@ export default function AttendancePage() {
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Total Present:</span>
+                        <span className="text-sm text-gray-600">
+                          Total Present:
+                        </span>
                         <span className="text-base font-medium text-gray-900">
                           {attendanceData.summary?.weeklyPresent || 0}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Total Late:</span>
+                        <span className="text-sm text-gray-600">
+                          Total Late:
+                        </span>
                         <span className="text-base font-medium text-gray-900">
                           {attendanceData.summary?.weeklyLate || 0}
                         </span>
@@ -403,7 +420,9 @@ export default function AttendancePage() {
 
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 transition-all hover:shadow-md">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-semibold text-gray-800">Monthly Overview</h3>
+                    <h3 className="text-base font-semibold text-gray-800">
+                      Monthly Overview
+                    </h3>
                     <div className="p-2 bg-red-50 rounded-lg">
                       <CalendarX className="h-5 w-5 text-red-600" />
                     </div>
@@ -413,19 +432,25 @@ export default function AttendancePage() {
                   ) : (
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Worked Days:</span>
+                        <span className="text-sm text-gray-600">
+                          Worked Days:
+                        </span>
                         <span className="text-base font-medium text-gray-900">
                           {attendanceData.summary?.monthlyWorkedDays || 0}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Absent Days:</span>
+                        <span className="text-sm text-gray-600">
+                          Absent Days:
+                        </span>
                         <span className="text-base font-medium text-gray-900">
                           {attendanceData.summary?.monthlyAbsentDays || 0}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Leave Days:</span>
+                        <span className="text-sm text-gray-600">
+                          Leave Days:
+                        </span>
                         <span className="text-base font-medium text-gray-900">
                           {attendanceData.summary?.monthlyLeaveDays || 0}
                         </span>
@@ -437,7 +462,9 @@ export default function AttendancePage() {
 
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="p-5 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold text-gray-800">Recent Attendance</h2>
+                  <h2 className="text-lg font-semibold text-gray-800">
+                    Recent Attendance
+                  </h2>
                 </div>
                 {loading.recent ? (
                   <Skeleton className="h-32" />
@@ -457,7 +484,9 @@ export default function AttendancePage() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                  <h3 className="font-semibold text-gray-700 mb-3">Attendance Rate</h3>
+                  <h3 className="font-semibold text-gray-700 mb-3">
+                    Attendance Rate
+                  </h3>
                   {attendanceStats ? (
                     <>
                       <Progress
@@ -478,7 +507,9 @@ export default function AttendancePage() {
                 </div>
 
                 <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                  <h3 className="font-semibold text-gray-700 mb-3">On Time Rate</h3>
+                  <h3 className="font-semibold text-gray-700 mb-3">
+                    On Time Rate
+                  </h3>
                   {attendanceStats ? (
                     <>
                       <Progress
@@ -499,7 +530,9 @@ export default function AttendancePage() {
                 </div>
 
                 <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                  <h3 className="font-semibold text-gray-700 mb-3">Late Rate</h3>
+                  <h3 className="font-semibold text-gray-700 mb-3">
+                    Late Rate
+                  </h3>
                   {attendanceStats ? (
                     <>
                       <Progress
@@ -522,7 +555,9 @@ export default function AttendancePage() {
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                  <h3 className="font-semibold text-gray-700 mb-4">Attendance Trend</h3>
+                  <h3 className="font-semibold text-gray-700 mb-4">
+                    Attendance Trend
+                  </h3>
                   {loading.charts ? (
                     <Skeleton className="h-64" />
                   ) : (
@@ -537,7 +572,9 @@ export default function AttendancePage() {
                   )}
                 </div>
                 <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                  <h3 className="font-semibold text-gray-700 mb-4">Hours Worked</h3>
+                  <h3 className="font-semibold text-gray-700 mb-4">
+                    Hours Worked
+                  </h3>
                   {loading.charts ? (
                     <Skeleton className="h-64" />
                   ) : (

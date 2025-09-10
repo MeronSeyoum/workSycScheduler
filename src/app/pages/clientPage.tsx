@@ -145,47 +145,48 @@ const ClientPage: React.FC = () => {
     fetchClients();
   }, [fetchClients]);
 
- const handleSubmit = useCallback(
-  async (values: Client | Omit<Client, "id">) => {
-    setFormLoading(true);
-    try {
-      const isUpdate = "id" in values;
+  const handleSubmit = useCallback(
+    async (values: Client | Omit<Client, "id">) => {
+      setFormLoading(true);
+      try {
+        const isUpdate = "id" in values;
 
-      // Create a clean payload without id
-      const { id, notes, ...rest } = values as Client;
-      const payload = {
-        ...rest,
-        notes: notes ?? "" // Ensure notes is always a string
-      };
+        // Create a clean payload without id
+        const { id, notes, ...rest } = values as Client;
+        const payload = {
+          ...rest,
+          notes: notes ?? "", // Ensure notes is always a string
+        };
 
-      if (isUpdate) {
-        await api.clients.updateClient(id, payload, token!);
-      } else {
-        await api.clients.createClient(payload, token!);
+        if (isUpdate) {
+          await api.clients.updateClient(id, payload, token!);
+        } else {
+          await api.clients.createClient(payload, token!);
+        }
+
+        showNotification(
+          "success",
+          isUpdate ? "Client Updated" : "Client Created",
+          `${values.business_name} ${
+            isUpdate ? "updated" : "added"
+          } successfully`
+        );
+        setDrawerVisible(false);
+        await fetchClients();
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Operation failed";
+        showNotification(
+          "error",
+          "id" in values ? "Update Failed" : "Creation Failed",
+          errorMessage
+        );
+      } finally {
+        setFormLoading(false);
       }
-
-      showNotification(
-        "success",
-        isUpdate ? "Client Updated" : "Client Created",
-        `${values.business_name} ${isUpdate ? "updated" : "added"} successfully`
-      );
-      setDrawerVisible(false);
-      await fetchClients();
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Operation failed";
-      showNotification(
-        "error",
-        "id" in values ? "Update Failed" : "Creation Failed",
-        errorMessage
-      );
-    } finally {
-      setFormLoading(false);
-    }
-  },
-  [token, fetchClients, showNotification]
-);
-
+    },
+    [token, fetchClients, showNotification]
+  );
 
   const handleDelete = useCallback(
     async (id: number) => {
@@ -263,7 +264,10 @@ const ClientPage: React.FC = () => {
               />
             </Badge>
             <div>
-              <Text strong style={{ display: "block", fontSize: 15 ,  color: '#0F6973' }}>
+              <Text
+                strong
+                style={{ display: "block", fontSize: 15, color: "#0F6973" }}
+              >
                 {record.business_name}
               </Text>
               <Text type="secondary" style={{ fontSize: 13 }}>
@@ -282,12 +286,12 @@ const ClientPage: React.FC = () => {
           <div>
             <div style={{ marginBottom: 6 }}>
               <MailOutlined style={{ color: "#0F6973", marginRight: 8 }} />
-              <Text style={{fontSize: 12}}>{record.email}</Text>
+              <Text style={{ fontSize: 12 }}>{record.email}</Text>
             </div>
             {record.phone && (
               <div>
                 <PhoneOutlined style={{ color: "#0F6973", marginRight: 8 }} />
-                <Text style={{fontSize: 12}}>{record.phone}</Text>
+                <Text style={{ fontSize: 12 }}>{record.phone}</Text>
               </div>
             )}
           </div>
@@ -298,7 +302,7 @@ const ClientPage: React.FC = () => {
         key: "location",
         width: 280,
         render: (_, record) => {
-          const address = record.location_address ;
+          const address = record.location_address;
           if (!address) return <Text type="secondary">No address</Text>;
 
           return (
@@ -312,8 +316,15 @@ const ClientPage: React.FC = () => {
                 <EnvironmentOutlined
                   style={{ color: "#fa8c16", marginRight: 8 }}
                 />
-                <Text style={{fontSize: 12}}>
-                  {[address.street, address.city, address.state, address.postal_code].filter(Boolean).join(", ")}
+                <Text style={{ fontSize: 12 }}>
+                  {[
+                    address.street,
+                    address.city,
+                    address.state,
+                    address.postal_code,
+                  ]
+                    .filter(Boolean)
+                    .join(", ")}
                 </Text>
               </div>
             </Tooltip>
@@ -384,60 +395,60 @@ const ClientPage: React.FC = () => {
   return (
     <>
       {contextHolder}
-       {loading? (
-                      <div className="p-4 space-y-4">
-                        <Skeleton className="h-10 w-full" />
-                        {[...Array(5)].map((_, i) => (
-                          <Skeleton key={i} className="h-16 w-full" />
-                        ))}
-                      </div>
-                    ) : (
-      <div className=" m-4 rounded-lg pt-4">
-        <div>
-          <div style={{ marginBottom: 24 }} className="flex justify-between">
-            <Flex gap={16} wrap="wrap">
-              <Input
-                placeholder="Search clients..."
-                prefix={<SearchOutlined />}
-                style={{ width: 280 }}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                allowClear
-              />
-              <Select
-                placeholder="Filter by status"
-                style={{ width: 180 }}
-                onChange={(value: string) => setStatusFilter(value)}
-                allowClear
-                value={statusFilter}
-              >
-                <Option value="all">All Statuses</Option>
-                {statusOptions.map((status) => (
-                  <Option key={status} value={status}>
-                    {status.charAt(0).toUpperCase() + status.slice(1)}
-                  </Option>
-                ))}
-              </Select>{" "}
-            </Flex>
-            <div className="flex justify-end gap-4 ">
-              {selectedRowKeys.length > 0 && (
-                <Button icon={<ExportOutlined />} onClick={handleBulkExport}>
-                  Export Selected
+      {loading ? (
+        <div className="p-4 space-y-4">
+          <Skeleton className="h-10 w-full" />
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full" />
+          ))}
+        </div>
+      ) : (
+        <div className=" m-4 rounded-lg pt-4">
+          <div>
+            <div style={{ marginBottom: 24 }} className="flex justify-between">
+              <Flex gap={16} wrap="wrap">
+                <Input
+                  placeholder="Search clients..."
+                  prefix={<SearchOutlined />}
+                  style={{ width: 280 }}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  allowClear
+                />
+                <Select
+                  placeholder="Filter by status"
+                  style={{ width: 180 }}
+                  onChange={(value: string) => setStatusFilter(value)}
+                  allowClear
+                  value={statusFilter}
+                >
+                  <Option value="all">All Statuses</Option>
+                  {statusOptions.map((status) => (
+                    <Option key={status} value={status}>
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </Option>
+                  ))}
+                </Select>{" "}
+              </Flex>
+              <div className="flex justify-end gap-4 ">
+                {selectedRowKeys.length > 0 && (
+                  <Button icon={<ExportOutlined />} onClick={handleBulkExport}>
+                    Export Selected
+                  </Button>
+                )}
+                <Button
+                  style={{ backgroundColor: "#0F6973", color: "white" }}
+                  icon={<PlusOutlined />}
+                  onClick={() => {
+                    setSelectedClient(null);
+                    setDrawerVisible(true);
+                  }}
+                >
+                  Add Client
                 </Button>
-              )}
-              <Button
-                style={{ backgroundColor: "#0F6973", color: "white" }}
-                icon={<PlusOutlined />}
-                onClick={() => {
-                  setSelectedClient(null);
-                  setDrawerVisible(true);
-                }}
-              >
-                Add Client
-              </Button>
+              </div>
             </div>
-          </div>
 
-          {/* {loading && clients.length === 0 ? (
+            {/* {loading && clients.length === 0 ? (
             <Skeleton active paragraph={{ rows: 8 }} />
           ) : ( */}
             <Table
@@ -454,7 +465,7 @@ const ClientPage: React.FC = () => {
               scroll={{ x: 900, y: "calc(100vh - 350px)" }}
               style={{
                 marginTop: 16,
-              
+
                 boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.03)",
               }}
               bordered
@@ -526,25 +537,25 @@ const ClientPage: React.FC = () => {
                 ),
               }}
             />
-          {/* )} */}
+            {/* )} */}
+          </div>
+          <Drawer
+            title={selectedClient ? "Edit Client" : "Add Client"}
+            width={720}
+            open={drawerVisible}
+            onClose={() => setDrawerVisible(false)}
+            styles={{
+              body: { padding: "24px 0" },
+            }}
+          >
+            <ClientForm
+              initialValues={selectedClient || undefined}
+              onSubmit={handleSubmit}
+              loading={formLoading}
+            />
+          </Drawer>
         </div>
-        <Drawer
-          title={selectedClient ? "Edit Client" : "Add Client"}
-          width={720}
-          open={drawerVisible}
-          onClose={() => setDrawerVisible(false)}
-          styles={{
-            body: { padding: "24px 0" },
-          }}
-        >
-          <ClientForm
-            initialValues={selectedClient || undefined}
-            onSubmit={handleSubmit}
-            loading={formLoading}
-          />
-        </Drawer>
-      </div>
-                    )}
+      )}
     </>
   );
 };

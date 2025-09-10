@@ -108,3 +108,22 @@ export interface ShiftWithEmployees extends Shift {
 
 // Alias for create operation response (optional - you can use ShiftWithEmployees everywhere)
 export type ShiftWithEmployeesCreate = ShiftWithEmployees;
+
+
+export interface BulkShiftTemplate {
+  id: number;
+  name: string;
+  shifts: CreateShiftWithEmployeesDto[];
+  status: 'draft' | 'pending_approval' | 'approved' | 'rejected';
+  created_by: number;
+  created_at: string;
+  approved_by?: number;
+  approved_at?: string;
+  scheduled_week: string; // YYYY-MM-DD format for the week this applies to
+}
+
+export interface BulkShiftCreationDto {
+  name: string;
+  shifts: CreateShiftWithEmployeesDto[];
+  scheduled_week: string;
+}

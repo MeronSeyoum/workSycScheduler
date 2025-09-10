@@ -17,6 +17,9 @@ import {
   Users,
   X,
   RefreshCw,
+  MapPin,
+  UserCheck,
+  Calendar,
 } from "lucide-react";
 import {
   format,
@@ -26,6 +29,63 @@ import {
   endOfDay,
 } from "date-fns";
 import { AttendanceRecord } from "@/lib/types/attendance";
+
+// Drawer Component
+interface DrawerProps {
+  title: string;
+  width: number;
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+  styles?: {
+    body?: React.CSSProperties;
+  };
+}
+
+const Drawer: React.FC<DrawerProps> = ({
+  title,
+  width,
+  open,
+  onClose,
+  children,
+  styles = {},
+}) => {
+  return (
+    <>
+      {/* Overlay */}
+      {open && (
+        <div
+          className="fixed inset-0 bg-transparent bg-opacity-50 z-50 transition-opacity duration-300"
+          onClick={onClose}
+        />
+      )}
+      
+      {/* Drawer */}
+      <div
+        className={`fixed top-0 right-0 h-full bg-white shadow-xl z-50 transform transition-transform duration-300 ${
+          open ? "translate-x-0" : "translate-x-full"
+        }`}
+        style={{ width: `${width}px` }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold">{title}</h2>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+        
+        {/* Body */}
+        <div 
+          className="h-full overflow-y-auto"
+          style={styles.body}
+        >
+          {children}
+        </div>
+      </div>
+    </>
+  );
+};
 
 interface DateRange {
   start: string;
@@ -46,32 +106,54 @@ interface AttendanceSheetProps {
   isLoading?: boolean;
 }
 
+// Helper function to get status display label
+const getStatusLabel = (status: string): string => {
+  const statusLabels: Record<string, string> = {
+    present: "Present",
+    late_arrival: "Late Arrival", 
+    absent: "Absent",
+    early_departure: "Early Departure",
+  };
+  return statusLabels[status] || status.charAt(0).toUpperCase() + status.slice(1);
+};
+
+// Helper function to get status indicator color
+const getStatusIndicatorColor = (status: string): string => {
+  const statusColors: Record<string, string> = {
+    present: "bg-green-500",
+    late_arrival: "bg-yellow-500",
+    absent: "bg-red-500",
+    early_departure: "bg-orange-500",
+  };
+  return statusColors[status] || "bg-gray-500";
+};
+
 const AttendanceSheet = ({
   data = [],
   showAllColumns = false,
-  // employees = [],
   onRefresh,
   isLoading = false,
 }: AttendanceSheetProps) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [employeeSearchTerm, setEmployeeSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<{
     key: keyof AttendanceRecord;
     direction: "ascending" | "descending";
   }>({
     key: "date",
-    direction: "descending", // Changed to descending to show latest first
+    direction: "descending",
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [showFilters, setShowFilters] = useState(false);
+  const [drawerVisible, setDrawerVisible] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     employees: [],
     dateRange: {
       start: format(
         new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
         "yyyy-MM-dd"
-      ), // 30 days ago
-      end: format(new Date(), "yyyy-MM-dd"), // today
+      ),
+      end: format(new Date(), "yyyy-MM-dd"),
     },
     status: [],
     departments: [],
@@ -84,14 +166,15 @@ const AttendanceSheet = ({
   const filterOptions = useMemo(() => {
     const employees = [
       ...new Set(
-        safeData.map(
-          (record) => record.employeeCode || String(record.employeeId)
-        )
+        safeData.map((record) => ({
+          code: record.employeeCode || String(record.employeeId),
+          name: record.employeeName || "Unknown",
+        }))
       ),
     ];
     const statuses = [
       ...new Set(safeData.map((record) => record.status)),
-    ].filter(Boolean);
+    ].filter(Boolean) as string[];
     const departments = [
       ...new Set(safeData.map((record) => record.position || "Unassigned")),
     ];
@@ -105,7 +188,7 @@ const AttendanceSheet = ({
         direction = "descending";
       }
       setSortConfig({ key, direction });
-      setCurrentPage(1); // Reset to first page when sorting
+      setCurrentPage(1);
     },
     [sortConfig]
   );
@@ -168,31 +251,31 @@ const AttendanceSheet = ({
     }
 
     // Apply sorting
-if (sortConfig) {
-  filtered.sort((a, b) => {
-    // Special handling for time fields
-    if (sortConfig.key === "clockIn" || sortConfig.key === "clockOut") {
-      const timeToMinutes = (time: string | null) => { // Update parameter type
-        if (!time) return 0;
-        try {
-          const date = parseISO(time);
-          return date.getHours() * 60 + date.getMinutes();
-        } catch {
-          return 0;
+    if (sortConfig) {
+      filtered.sort((a, b) => {
+        // Special handling for time fields
+        if (sortConfig.key === "clockIn" || sortConfig.key === "clockOut") {
+          const timeToMinutes = (time: string | null) => {
+            if (!time) return 0;
+            try {
+              const date = parseISO(time);
+              return date.getHours() * 60 + date.getMinutes();
+            } catch {
+              return 0;
+            }
+          };
+          const aTime = timeToMinutes(a[sortConfig.key] as string | null);
+          const bTime = timeToMinutes(b[sortConfig.key] as string | null);
+          return sortConfig.direction === "ascending"
+            ? aTime - bTime
+            : bTime - aTime;
         }
-      };
-      const aTime = timeToMinutes(a[sortConfig.key]);
-      const bTime = timeToMinutes(b[sortConfig.key]);
-      return sortConfig.direction === "ascending"
-        ? aTime - bTime
-        : bTime - aTime;
-    }
 
         // Special handling for date fields
         if (sortConfig.key === "date") {
           try {
-            const aDate = parseISO(a[sortConfig.key]);
-            const bDate = parseISO(b[sortConfig.key]);
+            const aDate = parseISO(a[sortConfig.key] as string);
+            const bDate = parseISO(b[sortConfig.key] as string);
             return sortConfig.direction === "ascending"
               ? aDate.getTime() - bDate.getTime()
               : bDate.getTime() - aDate.getTime();
@@ -201,7 +284,6 @@ if (sortConfig) {
           }
         }
 
-        // General comparison
         // General comparison
         const aValue = a[sortConfig.key];
         const bValue = b[sortConfig.key];
@@ -282,13 +364,40 @@ if (sortConfig) {
         start: format(
           new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
           "yyyy-MM-dd"
-        ), // 30 days ago
-        end: format(new Date(), "yyyy-MM-dd"), // today
+        ),
+        end: format(new Date(), "yyyy-MM-dd"),
       },
       status: [],
       departments: [],
     });
     setCurrentPage(1);
+  };
+
+  const toggleEmployeeFilter = (employeeCode: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      employees: prev.employees.includes(employeeCode)
+        ? prev.employees.filter((code) => code !== employeeCode)
+        : [...prev.employees, employeeCode],
+    }));
+  };
+
+  const toggleStatusFilter = (status: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      status: prev.status.includes(status)
+        ? prev.status.filter((s) => s !== status)
+        : [...prev.status, status],
+    }));
+  };
+
+  const toggleDepartmentFilter = (department: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      departments: prev.departments.includes(department)
+        ? prev.departments.filter((d) => d !== department)
+        : [...prev.departments, department],
+    }));
   };
 
   const removeEmployeeFilter = (employeeCode: string) => {
@@ -397,15 +506,15 @@ if (sortConfig) {
                 />
               </div>
               <Button
-                variant="primary"
+                variant={drawerVisible ? "primary" : "secondary"}
                 size="sm"
-                onClick={() => setShowFilters(!showFilters)}
+                onClick={() => setDrawerVisible(true)}
                 className="relative"
               >
                 <Filter className="mr-2 h-4 w-4" />
                 Filter
                 {activeFiltersCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {activeFiltersCount}
                   </span>
                 )}
@@ -418,9 +527,7 @@ if (sortConfig) {
                   disabled={isLoading}
                 >
                   <RefreshCw
-                    className={`mr-2 h-4 w-4 ${
-                      isLoading ? "animate-spin" : ""
-                    }`}
+                    className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
                   />
                   Refresh
                 </Button>
@@ -432,175 +539,89 @@ if (sortConfig) {
             </div>
           </div>
 
-          {/* Filter Panel */}
-          {showFilters && (
-            <div className="border rounded-lg p-4 bg-gray-50 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium">Filters</h3>
-                <Button variant="secondary" size="sm" onClick={clearFilters}>
-                  Clear All
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Date Range */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Date Range
-                  </label>
-                  <div className="space-y-2">
-                    <Input
-                      type="date"
-                      value={filters.dateRange.start}
-                      onChange={(e) =>
-                        setFilters((prev) => ({
-                          ...prev,
-                          dateRange: {
-                            ...prev.dateRange,
-                            start: e.target.value,
-                          },
-                        }))
-                      }
+          {/* Active Filters Display - Always visible when filters are applied */}
+          {activeFiltersCount > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm text-gray-600">Active filters:</span>
+              {filters.employees.map((empCode) => {
+                const employee = filterOptions.employees.find(
+                  (e) => e.code === empCode
+                );
+                return (
+                  <span
+                    key={empCode}
+                    className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-1"
+                  >
+                    <Users className="h-3 w-3" />
+                    {employee?.name || empCode}
+                    <X
+                      className="h-3 w-3 cursor-pointer hover:bg-blue-200 rounded-full"
+                      onClick={() => removeEmployeeFilter(empCode)}
                     />
-                    <Input
-                      type="date"
-                      value={filters.dateRange.end}
-                      onChange={(e) =>
-                        setFilters((prev) => ({
-                          ...prev,
-                          dateRange: {
-                            ...prev.dateRange,
-                            end: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                  </div>
-                </div>
-
-                {/* Employee Selection */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Employees
-                  </label>
-                  <select
-                    multiple
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                    value={filters.employees}
-                    onChange={(e) => {
-                      const selected = Array.from(
-                        e.target.selectedOptions,
-                        (option) => option.value
-                      );
+                  </span>
+                );
+              })}
+              {filters.status.map((status) => (
+                <span
+                  key={status}
+                  className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm flex items-center gap-1"
+                >
+                  <UserCheck className="h-3 w-3" />
+                  {getStatusLabel(status)}
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:bg-green-200 rounded-full"
+                    onClick={() => removeStatusFilter(status)}
+                  />
+                </span>
+              ))}
+              {filters.departments.map((dept) => (
+                <span
+                  key={dept}
+                  className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm flex items-center gap-1"
+                >
+                  <MapPin className="h-3 w-3" />
+                  {dept}
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:bg-purple-200 rounded-full"
+                    onClick={() => removeDepartmentFilter(dept)}
+                  />
+                </span>
+              ))}
+              {filters.dateRange.start !==
+                format(
+                  new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+                  "yyyy-MM-dd"
+                ) ||
+              filters.dateRange.end !== format(new Date(), "yyyy-MM-dd") ? (
+                <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  {safeFormat(filters.dateRange.start, "MMM d")} -{" "}
+                  {safeFormat(filters.dateRange.end, "MMM d, yyyy")}
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:bg-amber-200 rounded-full"
+                    onClick={() => {
                       setFilters((prev) => ({
                         ...prev,
-                        employees: selected,
+                        dateRange: {
+                          start: format(
+                            new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+                            "yyyy-MM-dd"
+                          ),
+                          end: format(new Date(), "yyyy-MM-dd"),
+                        },
                       }));
                     }}
-                  >
-                    {filterOptions.employees.map((empCode) => (
-                      <option key={empCode} value={empCode}>
-                        {empCode}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Status Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
-                  </label>
-                  <select
-                    multiple
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                    value={filters.status}
-                    onChange={(e) => {
-                      const selected = Array.from(
-                        e.target.selectedOptions,
-                        (option) => option.value
-                      );
-                      setFilters((prev) => ({ ...prev, status: selected }));
-                    }}
-                  >
-                    {filterOptions.statuses.map((status) => (
-                      <option key={status} value={status}>
-                        {status.charAt(0).toUpperCase() + status.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Position/Department Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Position
-                  </label>
-                  <select
-                    multiple
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                    value={filters.departments}
-                    onChange={(e) => {
-                      const selected = Array.from(
-                        e.target.selectedOptions,
-                        (option) => option.value
-                      );
-                      setFilters((prev) => ({
-                        ...prev,
-                        departments: selected,
-                      }));
-                    }}
-                  >
-                    {filterOptions.departments.map((dept) => (
-                      <option key={dept} value={dept}>
-                        {dept}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Active Filters Display */}
-              {activeFiltersCount > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {filters.employees.map((empCode) => (
-                    <span
-                      key={empCode}
-                      className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs flex items-center"
-                    >
-                      {empCode}
-                      <X
-                        className="ml-1 h-3 w-3 cursor-pointer"
-                        onClick={() => removeEmployeeFilter(empCode)}
-                      />
-                    </span>
-                  ))}
-                  {filters.status.map((status) => (
-                    <span
-                      key={status}
-                      className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs flex items-center"
-                    >
-                      {status}
-                      <X
-                        className="ml-1 h-3 w-3 cursor-pointer"
-                        onClick={() => removeStatusFilter(status)}
-                      />
-                    </span>
-                  ))}
-                  {filters.departments.map((dept) => (
-                    <span
-                      key={dept}
-                      className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs flex items-center"
-                    >
-                      {dept}
-                      <X
-                        className="ml-1 h-3 w-3 cursor-pointer"
-                        onClick={() => removeDepartmentFilter(dept)}
-                      />
-                    </span>
-                  ))}
-                </div>
-              )}
+                  />
+                </span>
+              ) : null}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="text-xs text-gray-600 hover:text-gray-900"
+              >
+                Clear all
+              </Button>
             </div>
           )}
         </div>
@@ -730,7 +751,7 @@ if (sortConfig) {
                               : "bg-gray-100 text-gray-800"
                           }`}
                       >
-                        {record.status}
+                        {getStatusLabel(record.status)}
                       </span>
                     </td>
                     {showAllColumns && (
@@ -853,6 +874,370 @@ if (sortConfig) {
           </div>
         </div>
       </CardContent>
+
+      {/* Filter Drawer */}
+     // Replace the Filter Drawer section in your component with this organized version:
+
+{/* Filter Drawer */}
+<Drawer
+  title="Filter Attendance Records"
+  width={800}
+  open={drawerVisible}
+  onClose={() => setDrawerVisible(false)}
+  styles={{
+    body: { padding: 0 },
+  }}
+>
+  <div className="h-full flex flex-col">
+    {/* Filter Summary Header */}
+    <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-gray-600">
+            <span className="font-medium">{processedData.length}</span> records found
+          </div>
+          {activeFiltersCount > 0 && (
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="text-sm text-blue-700 font-medium">
+                {activeFiltersCount} filter{activeFiltersCount > 1 ? 's' : ''} active
+              </span>
+            </div>
+          )}
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={clearFilters}
+          className="text-sm text-gray-600 hover:text-gray-900"
+          disabled={activeFiltersCount === 0}
+        >
+          Clear All Filters
+        </Button>
+      </div>
+    </div>
+
+    {/* Filter Content */}
+    <div className="flex-1 overflow-y-auto">
+      <div className="p-6 space-y-8">
+        
+        {/* Date Range Filter - Full Width Priority */}
+        <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <Calendar className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-gray-900">Date Range</h3>
+              <p className="text-sm text-gray-500">Filter records by date period</p>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Start Date
+                </label>
+                <Input
+                  type="date"
+                  value={filters.dateRange.start}
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      dateRange: {
+                        ...prev.dateRange,
+                        start: e.target.value,
+                      },
+                    }))
+                  }
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  End Date
+                </label>
+                <Input
+                  type="date"
+                  value={filters.dateRange.end}
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      dateRange: {
+                        ...prev.dateRange,
+                        end: e.target.value,
+                      },
+                    }))
+                  }
+                  className="w-full"
+                />
+              </div>
+            </div>
+            
+            {/* Quick Date Presets */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Quick Select
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { label: 'Today', days: 0 },
+                  { label: 'Last 7 Days', days: 7 },
+                  { label: 'Last 30 Days', days: 30 },
+                  { label: 'Last 90 Days', days: 90 },
+                ].map(({ label, days }) => (
+                  <Button
+                    key={label}
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      const endDate = new Date();
+                      const startDate = new Date(endDate.getTime() - days * 24 * 60 * 60 * 1000);
+                      setFilters(prev => ({
+                        ...prev,
+                        dateRange: {
+                          start: format(startDate, 'yyyy-MM-dd'),
+                          end: format(endDate, 'yyyy-MM-dd'),
+                        }
+                      }));
+                    }}
+                    className="text-sm justify-center"
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Two Column Layout for Other Filters */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* Status Filter */}
+          <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-green-50 rounded-lg">
+                <UserCheck className="h-5 w-5 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-semibold text-gray-900">Status</h3>
+                <p className="text-sm text-gray-500">
+                  {filters.status.length > 0 
+                    ? `${filters.status.length} selected`
+                    : 'All statuses'
+                  }
+                </p>
+              </div>
+            </div>
+            
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {filterOptions.statuses.map((status) => (
+                <label
+                  key={status}
+                  className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all cursor-pointer hover:bg-gray-50 ${
+                    filters.status.includes(status)
+                      ? 'border-green-200 bg-green-50'
+                      : 'border-gray-200'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={filters.status.includes(status)}
+                    onChange={() => toggleStatusFilter(status)}
+                    className="rounded text-green-600 focus:ring-green-500"
+                  />
+                  <div className="flex items-center gap-2 flex-1">
+                    <div className={`w-3 h-3 rounded-full ${getStatusIndicatorColor(status)}`} />
+                    <span className="text-sm font-medium">{getStatusLabel(status)}</span>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Position Filter */}
+          <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-purple-50 rounded-lg">
+                <MapPin className="h-5 w-5 text-purple-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-semibold text-gray-900">Positions</h3>
+                <p className="text-sm text-gray-500">
+                  {filters.departments.length > 0 
+                    ? `${filters.departments.length} selected`
+                    : 'All positions'
+                  }
+                </p>
+              </div>
+            </div>
+            
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {filterOptions.departments.map((dept) => (
+                <label
+                  key={dept}
+                  className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all cursor-pointer hover:bg-gray-50 ${
+                    filters.departments.includes(dept)
+                      ? 'border-purple-200 bg-purple-50'
+                      : 'border-gray-200'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={filters.departments.includes(dept)}
+                    onChange={() => toggleDepartmentFilter(dept)}
+                    className="rounded text-purple-600 focus:ring-purple-500"
+                  />
+                  <span className="text-sm font-medium flex-1">{dept}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Employee Filter - Full Width */}
+        <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <Users className="h-5 w-5 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-base font-semibold text-gray-900">Employees</h3>
+              <p className="text-sm text-gray-500">
+                {filters.employees.length > 0 
+                  ? `${filters.employees.length} of ${filterOptions.employees.length} selected`
+                  : `All ${filterOptions.employees.length} employees`
+                }
+              </p>
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            {/* Employee Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search employees by name or code..."
+                className="pl-10"
+                value={employeeSearchTerm}
+                onChange={(e) => setEmployeeSearchTerm(e.target.value)}
+              />
+            </div>
+
+            {/* Bulk Actions */}
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  const filteredEmployees = filterOptions.employees
+                    .filter(emp => 
+                      emp.name.toLowerCase().includes(employeeSearchTerm.toLowerCase()) || 
+                      emp.code.toLowerCase().includes(employeeSearchTerm.toLowerCase())
+                    );
+                  setFilters(prev => ({
+                    ...prev,
+                    employees: [...new Set([...prev.employees, ...filteredEmployees.map(e => e.code)])]
+                  }));
+                }}
+                className="text-xs"
+              >
+                Select All Visible
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setFilters(prev => ({
+                    ...prev,
+                    employees: []
+                  }));
+                }}
+                className="text-xs"
+                disabled={filters.employees.length === 0}
+              >
+                Clear Selection
+              </Button>
+            </div>
+            
+            {/* Employee List */}
+            <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-lg">
+              <div className="divide-y divide-gray-200">
+                {filterOptions.employees
+                  .filter(emp => 
+                    emp.name.toLowerCase().includes(employeeSearchTerm.toLowerCase()) || 
+                    emp.code.toLowerCase().includes(employeeSearchTerm.toLowerCase())
+                  )
+                  .map(({ code, name }) => (
+                    <label
+                      key={code}
+                      className={`flex items-center gap-3 p-3 transition-all cursor-pointer hover:bg-gray-50 ${
+                        filters.employees.includes(code) ? 'bg-blue-50' : ''
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={filters.employees.includes(code)}
+                        onChange={() => toggleEmployeeFilter(code)}
+                        className="rounded text-blue-600 focus:ring-blue-500"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-gray-900 truncate">{name}</div>
+                        <div className="text-xs text-gray-500">{code}</div>
+                      </div>
+                    </label>
+                  ))}
+                
+                {filterOptions.employees.filter(emp => 
+                  emp.name.toLowerCase().includes(employeeSearchTerm.toLowerCase()) || 
+                  emp.code.toLowerCase().includes(employeeSearchTerm.toLowerCase())
+                ).length === 0 && (
+                  <div className="p-4 text-center text-gray-500">
+                    <Users className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                    <p className="text-sm">No employees found</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Fixed Footer Actions */}
+    <div className="px-6 py-4 border-t border-gray-200 bg-white">
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-gray-600">
+          {activeFiltersCount > 0 && (
+            <span>
+              {activeFiltersCount} filter{activeFiltersCount > 1 ? 's' : ''} active • 
+              <span className="font-medium"> {processedData.length} records</span>
+            </span>
+          )}
+        </div>
+        <div className="flex gap-3">
+          <Button 
+            variant="secondary" 
+            onClick={() => setDrawerVisible(false)}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={() => {
+              setDrawerVisible(false);
+              setCurrentPage(1); // Reset to first page when applying filters
+            }}
+            className="min-w-[100px]"
+          >
+            Apply Filters
+          </Button>
+        </div>
+      </div>
+    </div>
+  </div>
+</Drawer>
     </div>
   );
 };
