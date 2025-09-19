@@ -23,9 +23,10 @@ const cn = (...classes: (string | undefined | false)[]): string => {
 const topNavItems = [
   { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/admin/employees', icon: Users, label: 'Employees' },
-  { href: '/admin/clients', icon: UserCircle, label: 'Clients' },
-  { href: '/admin/geofences', icon: MapPin, label: 'Geofences' },
-  { href: '/admin/qrcode', icon: QrCode, label: 'QR Codes' },
+  // { href: '/admin/clients', icon: UserCircle, label: 'Clients' },
+  { href: '/admin/locations', icon: MapPin, label: 'Locations' },
+  // { href: '/admin/geofences', icon: MapPin, label: 'Geofences' },
+  // { href: '/admin/qrcode', icon: QrCode, label: 'QR Codes' },
   { href: '/admin/shifts', icon: Calendar, label: 'Scheduling' },
   { href: '/admin/attendance', icon: Clock, label: 'Attendance' },
   { href: '/admin/users', icon: Settings, label: 'User Management' },
@@ -49,6 +50,7 @@ const getPageTitle = (pathname: string) => {
     attendance: 'Attendance Time Tracking',
     shifts: 'Multi-Location Shift Scheduler',
     clients: 'Client Management',
+    locations: 'Client Management',
     users: 'User Management',
     qrcode: 'QR Code Management',
     reports: 'Analytics Reports',
@@ -146,7 +148,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         <button
           onClick={onClick}
           className={cn(
-            'w-full flex items-center p-3 rounded-lg text-sm gap-3 hover:bg-teal-50 transition-all duration-200',
+            'w-full flex items-center p-3 rounded-lg text-sm gap-3 hover:bg-teal-50 transition-all duration-200 mb-3',
             'border border-transparent hover:border-teal-200 text-left',
             isActive(item.href)
               ? 'bg-teal-100 text-teal-700 font-medium border-teal-300 shadow-sm'
@@ -252,7 +254,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 <p className="text-xs font-medium text-teal-600 uppercase tracking-wider mb-2">Main</p>
               )}
             </div> */}
-            <ul className="space-y-1 px-3">
+            <ul className="space-y-1 px-2">
               {topNavItems.map((item) => (
                 <NavItem 
                   key={item.href} 
@@ -409,7 +411,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </nav>
 
           <main className="flex-1 overflow-y-auto p-4 md:p-6 animate-fadeIn" key={pathname}>
-            <div className="max-w-7xl mx-auto w-full">
+            <div className=" mx-auto w-full">
               {children}
             </div>
           </main>

@@ -1,5 +1,7 @@
 // types/shift.ts
 
+import { Client } from "./client";
+
 export type ShiftType = 'regular' | 'emergency';
 export type ShiftStatus = 'scheduled' | 'completed' | 'missed';
 
@@ -11,9 +13,11 @@ interface Timestamps {
 // Base Shift Interface
 export interface Shift extends Timestamps {
   id: number;
+  name?: string;
   date: string;
   start_time: string;
   end_time: string;
+  break_duration?: number; // in minutes
   client_id: number;
   created_by: number;
   shift_type: ShiftType;
@@ -76,25 +80,7 @@ export interface ShiftEmployeeAssignment {
 export interface ShiftWithEmployees extends Shift {
   
   employees: ShiftEmployeeAssignment[];
-  client: {
-    id: number;
-    business_name: string;
-    email?: string;
-    phone?: string;
-    contact_person?: string;
-    location_address?: {
-      city: string;
-      state: string;
-      street: string;
-      country: string;
-      postal_code: string;
-    };
-    status?: string;
-    notes?: string | null;
-    createdAt?: string;
-    updatedAt?: string;
-  };
-  // Keep employee_shifts for backward compatibility if needed
+  client: Client;
   employee_shifts?: Array<{
     id: number;
     employee_id: number;
@@ -103,27 +89,15 @@ export interface ShiftWithEmployees extends Shift {
     status: ShiftStatus;
     notes: string | null;
   }>;
-
 }
 
 // Alias for create operation response (optional - you can use ShiftWithEmployees everywhere)
 export type ShiftWithEmployeesCreate = ShiftWithEmployees;
 
 
-export interface BulkShiftTemplate {
-  id: number;
-  name: string;
-  shifts: CreateShiftWithEmployeesDto[];
-  status: 'draft' | 'pending_approval' | 'approved' | 'rejected';
-  created_by: number;
-  created_at: string;
-  approved_by?: number;
-  approved_at?: string;
-  scheduled_week: string; // YYYY-MM-DD format for the week this applies to
-}
-
-export interface BulkShiftCreationDto {
-  name: string;
-  shifts: CreateShiftWithEmployeesDto[];
-  scheduled_week: string;
+export interface CreateShiftResult {
+  status: string;
+  shift: ShiftWithEmployees;
+  warnings?: string[];
+  employees?: any[]; // Add this if the API returns employees array
 }

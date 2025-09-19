@@ -1,10 +1,7 @@
 // src/services/shiftService.ts
 import { fetchWithAuth } from './apiBase';
 import {
-  BulkShiftCreationDto,
-  BulkShiftTemplate,
   CreateShiftWithEmployeesDto,
-  
   ShiftWithEmployees,
   UpdateShiftDto,
   // RecurringShiftDto,
@@ -21,9 +18,6 @@ export interface ApiResponse<T = any> {
 }
 
 // Helper function to transform backend response to ShiftWithEmployees
-
-
-
 
 export const fetchShifts = async (
   params: {
@@ -311,101 +305,6 @@ export const moveShiftToDate = async (
 
 
 
-// Bulk shift operations
-export const createBulkTemplate = async (
-  template: BulkShiftCreationDto, 
-  token: string
-): Promise<BulkShiftTemplate> => {
-  const response = await fetchWithAuth<BulkShiftTemplate>(
-    '/shifts/bulk/templates',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(template),
-    },
-    token
-  );
-  
-  if (!response.data) {
-    throw new Error(response.message || 'Failed to create bulk template');
-  }
-  
-  return response.data;
-};
-
-export const getBulkTemplates = async (
-  status?: string, 
-  // token: string
-): Promise<BulkShiftTemplate[]> => {
-  const query = new URLSearchParams();
-  if (status) query.append('status', status);
-  
-  const response = await fetchWithAuth<BulkShiftTemplate[]>(
-    `/shifts/bulk/templates?${query.toString()}`,
-    {
-      headers: {
-        // 'Authorization': `Bearer ${token}`,
-      },
-    },
-    // token
-  );
-  
-  if (!response.data) {
-    throw new Error('Failed to fetch bulk templates');
-  }
-  
-  return response.data;
-};
-
-export const approveBulkTemplate = async (
-  templateId: number, 
-  token: string
-): Promise<{ message: string; created_shifts: number }> => {
-  const response = await fetchWithAuth<{ message: string; created_shifts: number }>(
-    `/shifts/bulk/templates/${templateId}/approve`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    },
-    token
-  );
-  
-  if (!response.data) {
-    throw new Error(response.message || 'Failed to approve bulk template');
-  }
-  
-  return response.data;
-};
-
-export const rejectBulkTemplate = async (
-  templateId: number, 
-  reason: string, 
-  token: string
-): Promise<{ message: string }> => {
-  const response = await fetchWithAuth<{ message: string }>(
-    `/shifts/bulk/templates/${templateId}/reject`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ reason }),
-    },
-    token
-  );
-  
-  if (!response.data) {
-    throw new Error(response.message || 'Failed to reject bulk template');
-  }
-  
-  return response.data;
-};
 
 
 
