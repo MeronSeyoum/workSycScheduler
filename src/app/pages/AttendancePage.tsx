@@ -341,7 +341,7 @@ export default function AttendancePage() {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 transition-all hover:shadow-md">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-base font-semibold text-gray-800">
-                      Today&apo;s Status
+                      Today&apos;s Status
                     </h3>
                     <div className="p-2 bg-blue-50 rounded-lg">
                       <Clock className="h-5 w-5 text-blue-600" />
