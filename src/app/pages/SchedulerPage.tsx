@@ -1,10 +1,10 @@
 /**
  * SchedulerPage.tsx - Production-level Shift Scheduling Component
- * 
+ *
  * This component manages shift scheduling with drag & drop functionality, AI scheduling,
  * and comprehensive shift management features. It handles assigned shifts, unassigned shifts,
  * draft shifts, and provides real-time updates with optimistic UI patterns.
- * 
+ *
  * Key Features:
  * - Drag & drop shift management
  * - Optimistic UI updates
@@ -12,18 +12,24 @@
  * - Compliance monitoring
  * - Multi-view scheduling (day/week)
  * - Real-time shift operations
- * 
+ *
  * Dependencies: react-dnd, antd, dayjs
  * API Integration: shifts, employees, clients
- * 
+ *
  * @author Meron Seyoum
  * @version 2.0.0
  */
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { Alert, Spin, notification} from "antd";
+import { Alert, Spin, notification } from "antd";
 import dayjs, { Dayjs } from "dayjs";
 
 // Day.js plugins - loaded before component logic
@@ -76,12 +82,9 @@ import { api as apiCall } from "@/lib/api";
 // CONSTANTS AND CONFIGURATION
 // =====================================================
 
-
-
 // =====================================================
 // UTILITY FUNCTIONS (Pure functions, no side effects)
 // =====================================================
-
 
 /**
  * Checks shifts for compliance violations (overtime, break requirements, etc.)
@@ -90,21 +93,24 @@ import { api as apiCall } from "@/lib/api";
  */
 const checkCompliance = (shifts: ShiftWithEmployees[]): string[] => {
   const warnings: string[] = [];
-  
+
   // Track employee hours and shifts for weekly limits and consecutive shifts
-  const employeeShifts = new Map<number, {shifts: ShiftWithEmployees[], totalHours: number}>();
-  
+  const employeeShifts = new Map<
+    number,
+    { shifts: ShiftWithEmployees[]; totalHours: number }
+  >();
+
   // Organize shifts by employee and date
   shifts.forEach((shift) => {
-    shift.employees?.forEach(employeeShift => {
+    shift.employees?.forEach((employeeShift) => {
       const employeeId = employeeShift.employee.id;
       if (!employeeShifts.has(employeeId)) {
-        employeeShifts.set(employeeId, {shifts: [], totalHours: 0});
+        employeeShifts.set(employeeId, { shifts: [], totalHours: 0 });
       }
-      
+
       const employeeData = employeeShifts.get(employeeId)!;
       employeeData.shifts.push(shift);
-      
+
       // Calculate shift duration
       const start = dayjs(shift.start_time, "HH:mm");
       const end = dayjs(shift.end_time, "HH:mm");
@@ -112,27 +118,35 @@ const checkCompliance = (shifts: ShiftWithEmployees[]): string[] => {
       employeeData.totalHours += duration;
     });
   });
-  
+
   // Check each employee's shifts for compliance issues
   employeeShifts.forEach((employeeData, employeeId) => {
-    const employee = employeeData.shifts[0]?.employees?.find(e => e.employee.id === employeeId)?.employee;
-    const employeeName = employee ? `${employee.user.first_name} ${employee.user.last_name}` : 'Unknown Employee';
-    
+    const employee = employeeData.shifts[0]?.employees?.find(
+      (e) => e.employee.id === employeeId
+    )?.employee;
+    const employeeName = employee
+      ? `${employee.user.first_name} ${employee.user.last_name}`
+      : "Unknown Employee";
+
     // Check weekly hour limits (40 hours per week)
     if (employeeData.totalHours > 40) {
-      warnings.push(`Weekly hour limit exceeded for ${employeeName}: ${employeeData.totalHours} hours`);
+      warnings.push(
+        `Weekly hour limit exceeded for ${employeeName}: ${employeeData.totalHours} hours`
+      );
     }
-    
+
     // Check for overtime (more than 8 hours in a single shift)
-    employeeData.shifts.forEach(shift => {
+    employeeData.shifts.forEach((shift) => {
       const start = dayjs(shift.start_time, "HH:mm");
       const end = dayjs(shift.end_time, "HH:mm");
       const duration = end.diff(start, "hours");
-      
+
       if (duration > 8) {
-        warnings.push(`Potential overtime for ${employeeName} on ${shift.date}: ${duration} hours`);
+        warnings.push(
+          `Potential overtime for ${employeeName} on ${shift.date}: ${duration} hours`
+        );
       }
-      
+
       // Check break requirements (shifts longer than 6 hours need a 30-minute break)
       // if (duration > 6) {
       //   const hasBreak = shift.break_duration && shift.break_duration >= 30;
@@ -141,29 +155,35 @@ const checkCompliance = (shifts: ShiftWithEmployees[]): string[] => {
       //   }
       // }
     });
-    
+
     // Check for consecutive shift violations (less than 8 hours between shifts)
-    const sortedShifts = [...employeeData.shifts].sort((a, b) => 
-      dayjs(a.date).diff(dayjs(b.date)) || a.start_time.localeCompare(b.start_time)
+    const sortedShifts = [...employeeData.shifts].sort(
+      (a, b) =>
+        dayjs(a.date).diff(dayjs(b.date)) ||
+        a.start_time.localeCompare(b.start_time)
     );
-    
+
     for (let i = 0; i < sortedShifts.length - 1; i++) {
       const currentShift = sortedShifts[i];
       const nextShift = sortedShifts[i + 1];
-      
+
       // Only check if shifts are on consecutive days
-      if (dayjs(nextShift.date).diff(dayjs(currentShift.date), 'day') === 1) {
-        const currentEnd = dayjs(`${currentShift.date} ${currentShift.end_time}`);
+      if (dayjs(nextShift.date).diff(dayjs(currentShift.date), "day") === 1) {
+        const currentEnd = dayjs(
+          `${currentShift.date} ${currentShift.end_time}`
+        );
         const nextStart = dayjs(`${nextShift.date} ${nextShift.start_time}`);
-        const hoursBetween = nextStart.diff(currentEnd, 'hours');
-        
+        const hoursBetween = nextStart.diff(currentEnd, "hours");
+
         if (hoursBetween < 8) {
-          warnings.push(`Consecutive shift violation for ${employeeName}: Only ${hoursBetween} hours between shifts on ${currentShift.date} and ${nextShift.date}`);
+          warnings.push(
+            `Consecutive shift violation for ${employeeName}: Only ${hoursBetween} hours between shifts on ${currentShift.date} and ${nextShift.date}`
+          );
         }
       }
     }
   });
-  
+
   return warnings;
 };
 
@@ -177,10 +197,10 @@ const checkCompliance = (shifts: ShiftWithEmployees[]): string[] => {
 const calculateStats = (
   shifts: ShiftWithEmployees[],
   draftShifts: ShiftWithEmployees[],
-  unassignedShifts: ShiftWithEmployees[],
+  unassignedShifts: ShiftWithEmployees[]
 ): StatsData => {
   const totalShifts = shifts.length + draftShifts.length;
-  
+
   // Calculate night shifts (10pm to 6am)
   const nightShifts = [...shifts, ...draftShifts].filter((shift) => {
     const startHour = parseInt(shift.start_time.split(":")[0]);
@@ -194,7 +214,8 @@ const calculateStats = (
     return sum + end.diff(start, "hours");
   }, 0);
 
-  const avgHours = totalShifts > 0 ? Math.round((totalHours / totalShifts) * 10) / 10 : 0;
+  const avgHours =
+    totalShifts > 0 ? Math.round((totalHours / totalShifts) * 10) / 10 : 0;
 
   // Calculate workload balance score
   const employeeShiftCount = new Map<number, number>();
@@ -208,7 +229,8 @@ const calculateStats = (
   const shiftCounts = Array.from(employeeShiftCount.values());
   const maxShifts = Math.max(...shiftCounts, 0);
   const minShifts = Math.min(...shiftCounts, maxShifts);
-  const balanceScore = maxShifts > 0 ? Math.round((minShifts / maxShifts) * 100) : 100;
+  const balanceScore =
+    maxShifts > 0 ? Math.round((minShifts / maxShifts) * 100) : 100;
 
   return {
     totalShifts,
@@ -220,14 +242,13 @@ const calculateStats = (
   };
 };
 
-
 // =====================================================
 // MAIN COMPONENT
 // =====================================================
 
 /**
  * SchedulerPage - Main scheduling interface component
- * 
+ *
  * Manages the complete scheduling workflow including:
  * - Employee shift assignment
  * - Drag & drop operations
@@ -239,7 +260,7 @@ export const SchedulerPage: React.FC = () => {
   // =====================================================
   // HOOKS AND REFS (Must be declared first)
   // =====================================================
-  
+
   const { token } = useAuth();
   const [preLoading, setPreLoading] = useState(false);
   const [api, contextHolder] = notification.useNotification();
@@ -250,20 +271,20 @@ export const SchedulerPage: React.FC = () => {
   // =====================================================
   // COMPONENT STATE
   // =====================================================
-  
+
   const [state, setState] = useState<ComponentState>({
     // Core data
     shifts: [],
     employees: [],
     clients: [],
-    
+
     // UI state
     selectedLocation: null,
     dateRange: [dayjs().startOf("isoWeek"), dayjs().endOf("isoWeek")],
     view: "week",
     searchTerm: "",
     departmentFilter: "All",
-    
+
     // Modal states
     isTimePickerModalOpen: false,
     isAISchedulerModalOpen: false,
@@ -271,13 +292,13 @@ export const SchedulerPage: React.FC = () => {
     isShiftSwapsModalOpen: false,
     isCreateShiftModalVisible: false,
     isCreateUnassignedModal: false,
-    
+
     // Edit states
     shiftToEdit: null,
-    newTime: {start: '8:00', end: '16:00'},
+    newTime: { start: "8:00", end: "16:00" },
     selectedDateForModal: undefined,
     selectedEmployeeForModal: undefined,
-    
+
     // System state
     error: null,
     loading: {
@@ -288,21 +309,21 @@ export const SchedulerPage: React.FC = () => {
       aiScheduling: false,
       publishing: false,
     },
-    
+
     // Feature data
     openShifts: [],
     shiftSwapRequests: [],
     complianceWarnings: [],
     unassignedShifts: [],
     draftShifts: [],
-    
+
     // UI preferences
     sidebarCollapsed: false,
     selectedNavKey: "schedule",
     showStatsDashboard: false,
-    selectedShiftTime: {start: '8:00', end: '16:00'},
+    selectedShiftTime: { start: "8:00", end: "16:00" },
     showShiftTimeSelector: false,
-    
+
     // Enhanced drag & drop state
     dragState: {
       isDragging: false,
@@ -321,15 +342,17 @@ export const SchedulerPage: React.FC = () => {
   // =====================================================
   // MEMOIZED VALUES (Computed before callback functions)
   // =====================================================
-  
+
   // Memoized debounced drag handler
- 
 
   /**
    * Get formatted employee full name
    */
   const getEmployeeFullName = useCallback((employee: Employee): string => {
-    return `${employee.first_name || ""} ${employee.last_name || ""}`.trim() || "Unknown Employee";
+    // Check if names are nested under user object
+    const firstName = employee.user?.first_name || employee.first_name || "";
+    const lastName = employee.user?.last_name || employee.last_name || "";
+    return `${firstName} ${lastName}`.trim() || "Unknown Employee";
   }, []);
 
   // Filtered employees based on location, search, and department
@@ -337,17 +360,28 @@ export const SchedulerPage: React.FC = () => {
     return state.employees.filter((employee) => {
       if (!state.selectedLocation) return false;
 
-      const matchesLocation = employee.assigned_locations?.includes(state.selectedLocation.name);
+      const matchesLocation = employee.assigned_locations?.includes(
+        state.selectedLocation.name
+      );
       const search = state.searchTerm.toLowerCase();
       const fullName = getEmployeeFullName(employee).toLowerCase();
       const position = employee.position?.toLowerCase() ?? "";
 
-      const matchesSearch = search === "" || fullName.includes(search) || position.includes(search);
-      const matchesDepartment = state.departmentFilter === "All" || employee.position === state.departmentFilter;
+      const matchesSearch =
+        search === "" || fullName.includes(search) || position.includes(search);
+      const matchesDepartment =
+        state.departmentFilter === "All" ||
+        employee.position === state.departmentFilter;
 
       return matchesLocation && matchesSearch && matchesDepartment;
     });
-  }, [state.employees, state.selectedLocation, state.searchTerm, state.departmentFilter, getEmployeeFullName]);
+  }, [
+    state.employees,
+    state.selectedLocation,
+    state.searchTerm,
+    state.departmentFilter,
+    getEmployeeFullName,
+  ]);
 
   // Shifts filtered for current view and date range
   const displayedShifts = useMemo(() => {
@@ -355,11 +389,20 @@ export const SchedulerPage: React.FC = () => {
 
     return state.shifts
       .filter((shift) => {
-        const isDateInRange = state.view === "day"
-          ? dayjs(shift.date).isSame(state.dateRange[0], "day")
-          : dayjs(shift.date).isBetween(state.dateRange[0], state.dateRange[1], "day", "[]");
+        const isDateInRange =
+          state.view === "day"
+            ? dayjs(shift.date).isSame(state.dateRange[0], "day")
+            : dayjs(shift.date).isBetween(
+                state.dateRange[0],
+                state.dateRange[1],
+                "day",
+                "[]"
+              );
 
-        return shift.client_id === parseInt(state.selectedLocation!.id) && isDateInRange;
+        return (
+          shift.client_id === parseInt(state.selectedLocation!.id) &&
+          isDateInRange
+        );
       })
       .sort((a, b) => a.start_time.localeCompare(b.start_time));
   }, [state.shifts, state.selectedLocation, state.view, state.dateRange]);
@@ -380,20 +423,28 @@ export const SchedulerPage: React.FC = () => {
 
   // Calculate statistics for dashboard
   const stats = useMemo(
-    () => calculateStats(displayedShifts, state.draftShifts, state.unassignedShifts),
+    () =>
+      calculateStats(
+        displayedShifts,
+        state.draftShifts,
+        state.unassignedShifts
+      ),
     [displayedShifts, state.draftShifts, state.unassignedShifts]
   );
 
-  
   // =====================================================
   // UTILITY CALLBACK FUNCTIONS
   // =====================================================
-  
+
   /**
    * Display notification with consistent styling
    */
   const showNotification = useCallback(
-    (type: "success" | "info" | "warning" | "error", message: string, description: string) => {
+    (
+      type: "success" | "info" | "warning" | "error",
+      message: string,
+      description: string
+    ) => {
       api[type]({
         message,
         description,
@@ -407,7 +458,7 @@ export const SchedulerPage: React.FC = () => {
   // =====================================================
   // API FUNCTIONS (Data fetching and persistence)
   // =====================================================
-  
+
   /**
    * Fetches shift data from API based on current filters
    * Called when date range or location changes
@@ -453,7 +504,7 @@ export const SchedulerPage: React.FC = () => {
   // =====================================================
   // DRAG & DROP HANDLERS (Core scheduling operations)
   // =====================================================
-  
+
   /**
    * Handles moving a shift to a new employee/date
    * Includes optimistic updates and proper error handling
@@ -461,13 +512,15 @@ export const SchedulerPage: React.FC = () => {
   const handleMoveShift = useCallback(
     async (shift: ShiftWithEmployees, employeeId: number, date: string) => {
       if (!token) return;
-      
+
       const sourceColumn = getShiftColumnId(shift);
       const targetColumn = getShiftColumnId(shift, employeeId, date);
-      trackDragOperation('move', sourceColumn, targetColumn, shift.id);
-      
-      console.log(`Moving shift ${shift.id} from ${sourceColumn} to ${targetColumn}`);  
-      
+      trackDragOperation("move", sourceColumn, targetColumn, shift.id);
+
+      console.log(
+        `Moving shift ${shift.id} from ${sourceColumn} to ${targetColumn}`
+      );
+
       // Validate the move operation
       const preview = getDropPreview(
         { type: "shift", shift, originalColumn: sourceColumn },
@@ -483,7 +536,7 @@ export const SchedulerPage: React.FC = () => {
       }
 
       try {
-        setState(prev => ({
+        setState((prev) => ({
           ...prev,
           loading: { ...prev.loading, shifts: true },
         }));
@@ -503,11 +556,11 @@ export const SchedulerPage: React.FC = () => {
           };
 
           await apiCall.shifts.createShift(createShiftDto, token);
-          
         } else {
           // Handle moving an existing assigned shift
           const currentEmployeeId = shift.employees[0]?.employee.id;
-          if (!currentEmployeeId) throw new Error("Shift has no assigned employee");
+          if (!currentEmployeeId)
+            throw new Error("Shift has no assigned employee");
 
           await apiCall.shifts.moveShiftToDate(
             shift.id,
@@ -519,24 +572,23 @@ export const SchedulerPage: React.FC = () => {
 
         // Refresh data from API to ensure consistency
         await fetchShiftsData();
-        
+
         showNotification(
-          "success", 
-          isUnassignedShift ? "Shift Assigned" : "Shift Moved", 
-          isUnassignedShift 
+          "success",
+          isUnassignedShift ? "Shift Assigned" : "Shift Moved",
+          isUnassignedShift
             ? "Unassigned shift has been successfully assigned to employee"
             : "Shift was successfully moved to new employee/date"
         );
-
       } catch (error) {
         console.error("Move shift failed:", error);
         showNotification(
-          "error", 
-          "Move Failed", 
+          "error",
+          "Move Failed",
           error instanceof Error ? error.message : "Failed to move shift"
         );
       } finally {
-        setState(prev => ({
+        setState((prev) => ({
           ...prev,
           loading: { ...prev.loading, shifts: false },
         }));
@@ -550,14 +602,23 @@ export const SchedulerPage: React.FC = () => {
    * Provides immediate feedback while API call is in progress
    */
   const handleSwapShifts = useCallback(
-    async (targetShift: ShiftWithEmployees, sourceShift: ShiftWithEmployees) => {
+    async (
+      targetShift: ShiftWithEmployees,
+      sourceShift: ShiftWithEmployees
+    ) => {
       if (!token) return;
 
-      console.log(`Optimistic swap: Shifts ${sourceShift.id} and ${targetShift.id}`);
+      console.log(
+        `Optimistic swap: Shifts ${sourceShift.id} and ${targetShift.id}`
+      );
 
       // Validate swap operation
       if (!canSwapShifts(sourceShift, targetShift)) {
-        showNotification("warning", "Invalid Swap", "These shifts cannot be swapped");
+        showNotification(
+          "warning",
+          "Invalid Swap",
+          "These shifts cannot be swapped"
+        );
         return;
       }
 
@@ -570,35 +631,42 @@ export const SchedulerPage: React.FC = () => {
 
         return {
           ...prevState,
-          shifts: prevState.shifts.map(s => {
+          shifts: prevState.shifts.map((s) => {
             if (s.id === sourceShift.id) {
               return {
                 ...s,
                 date: targetShift.date,
-                employees: [{
-                  ...s.employees[0],
-                  employee: targetEmployee
-                }]
+                employees: [
+                  {
+                    ...s.employees[0],
+                    employee: targetEmployee,
+                  },
+                ],
               };
             }
             if (s.id === targetShift.id) {
               return {
                 ...s,
                 date: sourceShift.date,
-                employees: [{
-                  ...s.employees[0],
-                  employee: sourceEmployee
-                }]
+                employees: [
+                  {
+                    ...s.employees[0],
+                    employee: sourceEmployee,
+                  },
+                ],
               };
             }
             return s;
           }),
           optimisticUpdates: {
             ...prevState.optimisticUpdates,
-            pendingSwaps: new Map(prevState.optimisticUpdates.pendingSwaps).set(swapId, { 
-              shift1: sourceShift, 
-              shift2: targetShift 
-            }),
+            pendingSwaps: new Map(prevState.optimisticUpdates.pendingSwaps).set(
+              swapId,
+              {
+                shift1: sourceShift,
+                shift2: targetShift,
+              }
+            ),
           },
         };
       };
@@ -606,21 +674,25 @@ export const SchedulerPage: React.FC = () => {
       // Define rollback function for error handling
       const rollbackUpdate = (prevState: ComponentState) => ({
         ...prevState,
-        shifts: prevState.shifts.map(s => {
+        shifts: prevState.shifts.map((s) => {
           if (s.id === sourceShift.id) return sourceShift;
           if (s.id === targetShift.id) return targetShift;
           return s;
         }),
         optimisticUpdates: {
           ...prevState.optimisticUpdates,
-          pendingSwaps: new Map([...prevState.optimisticUpdates.pendingSwaps].filter(([key]) => key !== swapId)),
+          pendingSwaps: new Map(
+            [...prevState.optimisticUpdates.pendingSwaps].filter(
+              ([key]) => key !== swapId
+            )
+          ),
         },
       });
 
       // Define async operation
       const asyncOperation = async () => {
         try {
-          setState(prev => ({
+          setState((prev) => ({
             ...prev,
             loading: { ...prev.loading, shifts: true },
           }));
@@ -665,7 +737,7 @@ export const SchedulerPage: React.FC = () => {
           );
 
           // Update state with API results
-          setState(prev => ({
+          setState((prev) => ({
             ...prev,
             shifts: prev.shifts
               .filter((s) => s.id !== sourceShift.id && s.id !== targetShift.id)
@@ -674,13 +746,21 @@ export const SchedulerPage: React.FC = () => {
             error: null,
             optimisticUpdates: {
               ...prev.optimisticUpdates,
-              pendingSwaps: new Map([...prev.optimisticUpdates.pendingSwaps].filter(([key]) => key !== swapId)),
+              pendingSwaps: new Map(
+                [...prev.optimisticUpdates.pendingSwaps].filter(
+                  ([key]) => key !== swapId
+                )
+              ),
             },
           }));
 
-          showNotification("success", "Shifts Swapped", "Shifts were successfully swapped");
+          showNotification(
+            "success",
+            "Shifts Swapped",
+            "Shifts were successfully swapped"
+          );
         } catch (error) {
-          setState(prev => ({
+          setState((prev) => ({
             ...prev,
             loading: { ...prev.loading, shifts: false },
           }));
@@ -688,7 +768,11 @@ export const SchedulerPage: React.FC = () => {
         }
       };
 
-      return optimisticUpdateRef.current(optimisticUpdate, asyncOperation, rollbackUpdate);
+      return optimisticUpdateRef.current(
+        optimisticUpdate,
+        asyncOperation,
+        rollbackUpdate
+      );
     },
     [token, showNotification]
   );
@@ -702,53 +786,72 @@ export const SchedulerPage: React.FC = () => {
       if (!token) return;
 
       // Find the specific shift to delete across all shift arrays
-      const shiftToDelete = [...state.shifts, ...state.draftShifts, ...state.unassignedShifts]
-        .find(s => s.id === shiftId);
+      const shiftToDelete = [
+        ...state.shifts,
+        ...state.draftShifts,
+        ...state.unassignedShifts,
+      ].find((s) => s.id === shiftId);
 
       if (!shiftToDelete) {
         showNotification("error", "Error", "Shift not found");
         return;
       }
 
-      console.log(`Deleting individual shift ${shiftId} for employee ${shiftToDelete.employees[0]?.employee?.id || 'unassigned'} on ${shiftToDelete.date}`);
+      console.log(
+        `Deleting individual shift ${shiftId} for employee ${
+          shiftToDelete.employees[0]?.employee?.id || "unassigned"
+        } on ${shiftToDelete.date}`
+      );
 
       // Define optimistic update to remove only the specific shift
       const optimisticUpdate = (prevState: ComponentState) => ({
         ...prevState,
-        shifts: prevState.shifts.filter(s => s.id !== shiftId),
-        draftShifts: prevState.draftShifts.filter(s => s.id !== shiftId),
-        unassignedShifts: prevState.unassignedShifts.filter(s => s.id !== shiftId),
+        shifts: prevState.shifts.filter((s) => s.id !== shiftId),
+        draftShifts: prevState.draftShifts.filter((s) => s.id !== shiftId),
+        unassignedShifts: prevState.unassignedShifts.filter(
+          (s) => s.id !== shiftId
+        ),
         optimisticUpdates: {
           ...prevState.optimisticUpdates,
-          pendingDeletes: new Set([...prevState.optimisticUpdates.pendingDeletes, shiftId]),
+          pendingDeletes: new Set([
+            ...prevState.optimisticUpdates.pendingDeletes,
+            shiftId,
+          ]),
         },
       });
 
       // Define rollback function to restore the specific shift
       const rollbackUpdate = (prevState: ComponentState) => {
         const newState = { ...prevState };
-        
+
         // Restore the shift to its original location based on its properties
         if (shiftToDelete.employees.length > 0) {
           newState.shifts = [...prevState.shifts, shiftToDelete];
-        } else if (shiftToDelete.status === 'draft') {
+        } else if (shiftToDelete.status === "draft") {
           newState.draftShifts = [...prevState.draftShifts, shiftToDelete];
         } else {
-          newState.unassignedShifts = [...prevState.unassignedShifts, shiftToDelete];
+          newState.unassignedShifts = [
+            ...prevState.unassignedShifts,
+            shiftToDelete,
+          ];
         }
-        
+
         newState.optimisticUpdates = {
           ...prevState.optimisticUpdates,
-          pendingDeletes: new Set([...prevState.optimisticUpdates.pendingDeletes].filter(id => id !== shiftId)),
+          pendingDeletes: new Set(
+            [...prevState.optimisticUpdates.pendingDeletes].filter(
+              (id) => id !== shiftId
+            )
+          ),
         };
-        
+
         return newState;
       };
 
       // Define async delete operation
       const asyncOperation = async () => {
         try {
-          setState(prev => ({
+          setState((prev) => ({
             ...prev,
             loading: { ...prev.loading, shifts: true },
           }));
@@ -756,18 +859,26 @@ export const SchedulerPage: React.FC = () => {
           // Call API to delete the specific shift
           await apiCall.shifts.deleteShift(shiftId, token);
 
-          setState(prev => ({
+          setState((prev) => ({
             ...prev,
             loading: { ...prev.loading, shifts: false },
             optimisticUpdates: {
               ...prev.optimisticUpdates,
-              pendingDeletes: new Set([...prev.optimisticUpdates.pendingDeletes].filter(id => id !== shiftId)),
+              pendingDeletes: new Set(
+                [...prev.optimisticUpdates.pendingDeletes].filter(
+                  (id) => id !== shiftId
+                )
+              ),
             },
           }));
 
-          showNotification("success", "Shift Deleted", "The shift was successfully deleted");
+          showNotification(
+            "success",
+            "Shift Deleted",
+            "The shift was successfully deleted"
+          );
         } catch (error) {
-          setState(prev => ({
+          setState((prev) => ({
             ...prev,
             loading: { ...prev.loading, shifts: false },
           }));
@@ -775,30 +886,38 @@ export const SchedulerPage: React.FC = () => {
         }
       };
 
-      return optimisticUpdateRef.current(optimisticUpdate, asyncOperation, rollbackUpdate);
+      return optimisticUpdateRef.current(
+        optimisticUpdate,
+        asyncOperation,
+        rollbackUpdate
+      );
     },
-    [token, state.shifts, state.draftShifts, state.unassignedShifts, showNotification]
+    [
+      token,
+      state.shifts,
+      state.draftShifts,
+      state.unassignedShifts,
+      showNotification,
+    ]
   );
-
-
- 
 
   // =====================================================
   // SHIFT CREATION HANDLERS
   // =====================================================
-  
+
   /**
    * Opens create shift modal for new unassigned shift
    */
-  const handleCreateNewShift = useCallback((date?: string, isUnassigned: boolean = false) => {
-    setState((prev) => ({
-      ...prev,
-      isCreateShiftModalVisible: true,
-      isCreateUnassignedModal: isUnassigned,
-      selectedDateForModal: date,
-      selectedEmployeeForModal: undefined,
-    }));
-  }, []);
+// For the "New Shift" button in header - no specific employee
+const handleCreateNewShift = useCallback((date?: string, isUnassigned: boolean = false) => {
+  setState((prev) => ({
+    ...prev,
+    isCreateShiftModalVisible: true,
+    isCreateUnassignedModal: isUnassigned,
+    selectedDateForModal: date,
+    selectedEmployeeForModal: undefined, // Explicitly undefined
+  }));
+}, []);
 
   /**
    * Opens create shift modal for specific employee and date
@@ -816,10 +935,10 @@ export const SchedulerPage: React.FC = () => {
   /**
    * Handles saving new shift - supports both assigned and unassigned shifts
    */
- /**
- * Handles saving new shift - supports both assigned and unassigned shifts
- */
-const handleSaveShift = useCallback(async (shiftData: any) => {
+  /**
+   * Handles saving new shift - supports both assigned and unassigned shifts
+   */
+ const handleSaveShift = useCallback(async (shiftData: any) => {
   if (!token || !state.selectedLocation) {
     showNotification("error", "Error", "Authentication or location required");
     return;
@@ -831,55 +950,58 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
       loading: { ...prev.loading, shifts: true },
     }));
 
+    // Case 1: Unassigned shift
     if (state.isCreateUnassignedModal) {
-      // Handle unassigned shift creation
-      const selectedClient = state.clients.find(c => c.id === parseInt(state.selectedLocation!.id));
+      console.log('Creating unassigned shift');
+      
+      const selectedClient = state.clients.find(
+        (c) => c.id === parseInt(state.selectedLocation!.id)
+      );
       if (!selectedClient) throw new Error("Client not found");
 
-      const newUnassignedShift: ShiftWithEmployees = {
-        id: Date.now(), // Temporary ID for local state
+      // Create via API for unassigned shift
+      const createShiftDto: CreateShiftWithEmployeesDto = {
+        client_id: state.selectedLocation!.id.toString(),
         date: shiftData.date,
         start_time: shiftData.startTime,
         end_time: shiftData.endTime,
-        break_duration: shiftData.breakDuration,
-        client_id: parseInt(state.selectedLocation!.id),
-        client: {
-          id: selectedClient.id,
-          business_name: selectedClient.business_name,
-          email: selectedClient.email || '',
-          phone: selectedClient.phone || '',
-          contact_person: selectedClient.contact_person || '',
-          location_address: selectedClient.location_address || {
-            city: '', state: '', street: '', country: '', postal_code: ''
-          },
-          status: selectedClient.status || 'active',
-          notes: selectedClient.notes || null
-        },
-        employees: [],
+        employee_ids: [], // Empty array for unassigned
         shift_type: "regular",
         notes: shiftData.note,
-        status: (shiftData.publish ? 'scheduled' : 'draft') as ShiftStatus,
-        name: shiftData.name || `Unassigned Shift ${Date.now()}`,
-        created_at: dayjs().format(),
-        updated_at: dayjs().format(),
-        created_by: 1,
+        // status: shiftData.publish ? 'scheduled' : 'draft' as ShiftStatus,
+        // name: shiftData.name || `Unassigned Shift ${Date.now()}`,
       };
+
+      const response = await apiCall.shifts.createShift(createShiftDto, token);
+      
+      let newShift: ShiftWithEmployees;
+      if (response.shift) {
+        newShift = response.shift;
+      } else if ((response as unknown as ShiftWithEmployees).id) {
+        newShift = response as unknown as ShiftWithEmployees;
+      } else {
+        throw new Error("Invalid API response format");
+      }
 
       if (shiftData.publish) {
         setState((prev) => ({
           ...prev,
-          unassignedShifts: [...prev.unassignedShifts, newUnassignedShift],
+          unassignedShifts: [...prev.unassignedShifts, newShift],
         }));
       } else {
         setState((prev) => ({
           ...prev,
-          draftShifts: [...prev.draftShifts, newUnassignedShift],
+          draftShifts: [...prev.draftShifts, newShift],
         }));
       }
-
-    } else if (state.selectedEmployeeForModal) {
-      // Handle assigned shift creation
-      const employee = state.employees.find(e => e.id === state.selectedEmployeeForModal);
+    } 
+    // Case 2: Assigned shift with specific employee (from grid click)
+    else if (state.selectedEmployeeForModal) {
+      console.log('Creating assigned shift for specific employee:', state.selectedEmployeeForModal);
+      
+      const employee = state.employees.find(
+        (e) => e.id === state.selectedEmployeeForModal
+      );
       if (!employee) throw new Error("Employee not found");
 
       const createShiftDto: CreateShiftWithEmployeesDto = {
@@ -890,18 +1012,15 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
         employee_ids: [employee.id],
         shift_type: "regular",
         notes: shiftData.note,
+        // status: shiftData.publish ? 'scheduled' : 'draft' as ShiftStatus,
       };
 
       const response = await apiCall.shifts.createShift(createShiftDto, token);
       
-      // Handle different API response formats
       let newShift: ShiftWithEmployees;
-      
       if (response.shift) {
-        // API returns { shift: ShiftWithEmployees, ... }
         newShift = response.shift;
       } else if ((response as unknown as ShiftWithEmployees).id) {
-        // API returns ShiftWithEmployees directly - cast to unknown first
         newShift = response as unknown as ShiftWithEmployees;
       } else {
         throw new Error("Invalid API response format");
@@ -913,14 +1032,13 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
           shifts: [...prev.shifts, newShift],
         }));
       } else {
-        // Create draft version for local state
         const draftShift: ShiftWithEmployees = {
           ...newShift,
-          status: 'draft' as ShiftStatus,
+          status: "draft" as ShiftStatus,
           employees: newShift.employees ? newShift.employees.map((emp: any) => ({
             ...emp,
-            status: 'scheduled' as ShiftStatus
-          })) : []
+            status: "scheduled" as ShiftStatus,
+          })) : [],
         };
         
         setState((prev) => ({
@@ -928,6 +1046,60 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
           draftShifts: [...prev.draftShifts, draftShift],
         }));
       }
+    }
+    // Case 3: Assigned shift without specific employee (from header - user selects from dropdown)
+    else if (shiftData.employee) {
+      console.log('Creating shift with employee selected from dropdown:', shiftData.employee);
+      
+      const employee = state.employees.find(e => e.id === parseInt(shiftData.employee));
+      if (!employee) throw new Error("Employee not found");
+
+      const createShiftDto: CreateShiftWithEmployeesDto = {
+        client_id: state.selectedLocation!.id.toString(),
+        date: shiftData.date,
+        start_time: shiftData.startTime,
+        end_time: shiftData.endTime,
+        employee_ids: [employee.id],
+        shift_type: "regular",
+        notes: shiftData.note,
+        // status: shiftData.publish ? 'scheduled' : 'draft' as ShiftStatus,
+      };
+
+      const response = await apiCall.shifts.createShift(createShiftDto, token);
+      
+      let newShift: ShiftWithEmployees;
+      if (response.shift) {
+        newShift = response.shift;
+      } else if ((response as unknown as ShiftWithEmployees).id) {
+        newShift = response as unknown as ShiftWithEmployees;
+      } else {
+        throw new Error("Invalid API response format");
+      }
+
+      if (shiftData.publish) {
+        setState((prev) => ({
+          ...prev,
+          shifts: [...prev.shifts, newShift],
+        }));
+      } else {
+        const draftShift: ShiftWithEmployees = {
+          ...newShift,
+          status: "draft" as ShiftStatus,
+          employees: newShift.employees ? newShift.employees.map((emp: any) => ({
+            ...emp,
+            status: "scheduled" as ShiftStatus,
+          })) : [],
+        };
+        
+        setState((prev) => ({
+          ...prev,
+          draftShifts: [...prev.draftShifts, draftShift],
+        }));
+      }
+    }
+    // Case 4: No employee selected at all
+    else {
+      throw new Error("Please select an employee for this shift");
     }
 
     showNotification("success", "Shift Created", "Shift was successfully created");
@@ -944,7 +1116,6 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
   }
 }, [token, state.selectedLocation, state.employees, state.clients, state.isCreateUnassignedModal, state.selectedEmployeeForModal, showNotification]);
 
-
   /**
    * Cancels shift creation modal
    */
@@ -959,15 +1130,15 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
   // =====================================================
   // SCHEDULE MANAGEMENT HANDLERS
   // =====================================================
-  
+
   /**
    * Publishes all draft shifts to make them official
    */
   const handlePublishSchedule = useCallback(async () => {
-      if (!token || !state.selectedLocation) {
-    showNotification("error", "Error", "Authentication or location required");
-    return;
-  }
+    if (!token || !state.selectedLocation) {
+      showNotification("error", "Error", "Authentication or location required");
+      return;
+    }
     try {
       setState((prev) => ({
         ...prev,
@@ -975,9 +1146,13 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
       }));
 
       const publishPromises = state.draftShifts.map(async (draftShift) => {
-        const updatedShift = await apiCall.shifts.updateShift(draftShift.id, {
-          status: 'scheduled'
-        }, token);
+        const updatedShift = await apiCall.shifts.updateShift(
+          draftShift.id,
+          {
+            status: "scheduled",
+          },
+          token
+        );
         return updatedShift;
       });
 
@@ -985,13 +1160,23 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
 
       setState((prev) => ({
         ...prev,
-        shifts: [...prev.shifts, ...publishedShifts.filter(s => s.employees.length > 0)],
-        unassignedShifts: [...prev.unassignedShifts, ...publishedShifts.filter(s => s.employees.length === 0)],
+        shifts: [
+          ...prev.shifts,
+          ...publishedShifts.filter((s) => s.employees.length > 0),
+        ],
+        unassignedShifts: [
+          ...prev.unassignedShifts,
+          ...publishedShifts.filter((s) => s.employees.length === 0),
+        ],
         draftShifts: [],
         loading: { ...prev.loading, publishing: false },
       }));
 
-      showNotification("success", "Schedule Published", "All draft shifts have been published");
+      showNotification(
+        "success",
+        "Schedule Published",
+        "All draft shifts have been published"
+      );
     } catch (error) {
       console.error("Failed to publish schedule:", error);
       showNotification("error", "Publish Failed", "Failed to publish schedule");
@@ -1010,8 +1195,6 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
 
     const formattedStart = state.newTime.start.split(":").slice(0, 2).join(":");
     const formattedEnd = state.newTime.end.split(":").slice(0, 2).join(":");
-
-  
 
     try {
       setState((prev) => ({
@@ -1042,10 +1225,18 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
         loading: { ...prev.loading, shifts: false },
       }));
 
-      showNotification("success", "Shift Updated", "Shift time was successfully updated");
+      showNotification(
+        "success",
+        "Shift Updated",
+        "Shift time was successfully updated"
+      );
     } catch (error) {
       console.error("Failed to update shift:", error);
-      showNotification("error", "Update Failed", error instanceof Error ? error.message : "Failed to update shift");
+      showNotification(
+        "error",
+        "Update Failed",
+        error instanceof Error ? error.message : "Failed to update shift"
+      );
       setState((prev) => ({
         ...prev,
         loading: { ...prev.loading, shifts: false },
@@ -1056,7 +1247,7 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
   // =====================================================
   // NAVIGATION HANDLERS
   // =====================================================
-  
+
   /**
    * Navigate to previous week
    */
@@ -1094,9 +1285,9 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
    * Handle manual date range changes
    */
   const handleDateRangeChange = useCallback((range: [Dayjs, Dayjs]) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
-      dateRange: range
+      dateRange: range,
     }));
   }, []);
 
@@ -1105,13 +1296,17 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
    */
   const handleUndoChanges = useCallback(() => {
     if (state.selectedLocation) fetchShiftsData();
-    showNotification("info", "Changes Undone", "The last action has been undone");
+    showNotification(
+      "info",
+      "Changes Undone",
+      "The last action has been undone"
+    );
   }, [state.selectedLocation, showNotification, fetchShiftsData]);
 
   // =====================================================
   // EFFECT HOOKS (Side effects and lifecycle)
   // =====================================================
-  
+
   /**
    * Initial data loading effect
    * Fetches clients and employees on component mount
@@ -1183,13 +1378,13 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
         clearTimeout(dragTimeoutRef.current);
       }
       // Clear any pending optimistic updates
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         optimisticUpdates: {
           pendingMoves: new Map(),
           pendingSwaps: new Map(),
           pendingDeletes: new Set(),
-        }
+        },
       }));
     };
   }, []);
@@ -1197,12 +1392,17 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
   // =====================================================
   // RENDER LOGIC
   // =====================================================
-  
+
   // Early return for location selection
   if (!state.selectedLocation && state.clients.length > 0) {
     return (
       <div className="p-4">
-        <Alert message="Please select a location" type="info" showIcon className="mb-4" />
+        <Alert
+          message="Please select a location"
+          type="info"
+          showIcon
+          className="mb-4"
+        />
       </div>
     );
   }
@@ -1233,17 +1433,28 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
                   loading={state.loading}
                   stats={stats}
                   onLocationChange={(locationId) => {
-                    const client = state.clients.find((c) => c.id.toString() === locationId);
+                    const client = state.clients.find(
+                      (c) => c.id.toString() === locationId
+                    );
                     if (client) {
                       setState((prev) => ({
                         ...prev,
-                        selectedLocation: { id: client.id.toString(), name: client.business_name },
+                        selectedLocation: {
+                          id: client.id.toString(),
+                          name: client.business_name,
+                        },
                       }));
                     }
                   }}
-                  onDepartmentChange={(value) => setState(prev => ({ ...prev, departmentFilter: value }))}
-                  onSearchChange={(value) => setState(prev => ({ ...prev, searchTerm: value }))}
-                  onViewChange={(value: "day" | "week" | "month") => setState(prev => ({ ...prev, view: value }))}
+                  onDepartmentChange={(value) =>
+                    setState((prev) => ({ ...prev, departmentFilter: value }))
+                  }
+                  onSearchChange={(value) =>
+                    setState((prev) => ({ ...prev, searchTerm: value }))
+                  }
+                  onViewChange={(value: "day" | "week" | "month") =>
+                    setState((prev) => ({ ...prev, view: value }))
+                  }
                   onDateRangeChange={handleDateRangeChange}
                   onPrevious={handlePrevious}
                   onNext={handleNext}
@@ -1258,16 +1469,20 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
                   visible={state.isCreateShiftModalVisible}
                   onCancel={handleCancelShift}
                   onSave={handleSaveShift}
-                  employees={state.employees.map((emp) => ({
-                    id: emp.id,
-                    name: getEmployeeFullName(emp),
-                    position: emp.position || "",
-                  }))}
-                  positions={Array.from(new Set(state.employees.map((emp) => emp?.position).filter(Boolean)))}
+                  employees={state.employees} // Pass full employee objects
+                  positions={Array.from(
+                    new Set(
+                      state.employees
+                        .map((emp) => emp?.position)
+                        .filter(Boolean)
+                    )
+                  )}
                   clients={state.clients}
                   selectedDate={state.selectedDateForModal}
                   isUnassigned={state.isCreateUnassignedModal}
-                  selectedEmployee={state.employees.find(e => e.id === state.selectedEmployeeForModal)}
+                  selectedEmployee={state.employees.find(
+                    (e) => e.id === state.selectedEmployeeForModal
+                  )}
                 />
 
                 {/* Error Display */}
@@ -1277,7 +1492,9 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
                     type="error"
                     showIcon
                     closable
-                    onClose={() => setState((prev) => ({ ...prev, error: null }))}
+                    onClose={() =>
+                      setState((prev) => ({ ...prev, error: null }))
+                    }
                     className="mb-6 rounded-lg"
                   />
                 )}
@@ -1287,7 +1504,12 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
                   <div className="mb-6">
                     <ComplianceWarnings
                       warnings={state.complianceWarnings}
-                      onClose={() => setState((prev) => ({ ...prev, complianceWarnings: [] }))}
+                      onClose={() =>
+                        setState((prev) => ({
+                          ...prev,
+                          complianceWarnings: [],
+                        }))
+                      }
                     />
                   </div>
                 )}
@@ -1313,7 +1535,10 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
                       setState((prev) => ({
                         ...prev,
                         shiftToEdit: shift,
-                        newTime: { start: shift.start_time, end: shift.end_time },
+                        newTime: {
+                          start: shift.start_time,
+                          end: shift.end_time,
+                        },
                         isTimePickerModalOpen: true,
                       }));
                     }}
@@ -1330,8 +1555,19 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
                   error={state.error}
                   loading={state.loading.shifts}
                   onOk={handleUpdateShiftTime}
-                  onCancel={() => setState((prev) => ({ ...prev, isTimePickerModalOpen: false, error: null }))}
-                  onTimeChange={(type, value) => setState((prev) => ({ ...prev, newTime: { ...prev.newTime, [type]: value } }))}
+                  onCancel={() =>
+                    setState((prev) => ({
+                      ...prev,
+                      isTimePickerModalOpen: false,
+                      error: null,
+                    }))
+                  }
+                  onTimeChange={(type, value) =>
+                    setState((prev) => ({
+                      ...prev,
+                      newTime: { ...prev.newTime, [type]: value },
+                    }))
+                  }
                 />
 
                 {/* Drag Preview Overlay */}
@@ -1342,8 +1578,8 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
                 )}
 
                 {/* Pending Operations Indicator */}
-                {(state.optimisticUpdates.pendingMoves.size > 0 || 
-                  state.optimisticUpdates.pendingSwaps.size > 0 || 
+                {(state.optimisticUpdates.pendingMoves.size > 0 ||
+                  state.optimisticUpdates.pendingSwaps.size > 0 ||
                   state.optimisticUpdates.pendingDeletes.size > 0) && (
                   <div className="fixed bottom-4 right-4 bg-yellow-100 border border-yellow-300 text-yellow-800 px-4 py-2 rounded-lg shadow-lg">
                     Syncing changes...
@@ -1351,13 +1587,10 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
                 )}
 
                 {/* AI Scheduler Modal */}
-                
 
                 {/* Open Shifts Modal */}
-               
 
                 {/* Shift Swaps Modal */}
-               
               </div>
             )}
           </div>

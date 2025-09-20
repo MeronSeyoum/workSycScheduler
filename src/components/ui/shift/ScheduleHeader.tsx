@@ -189,35 +189,21 @@ export const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-2">
-          <Button
-            onClick={() => onCreateNewShift()}
-            icon={<PlusCircle size={16} />}
-            style={{
-              backgroundColor: TEAL_700,
-              color: "white",
-              borderColor: TEAL_800,
-            }}
-          >
-            New Shift
-          </Button>
+      <Button
+  onClick={() => onCreateNewShift()} // No employee specified
+  icon={<PlusCircle size={16} />}
+  style={{ backgroundColor: TEAL_700, color: "white", borderColor: TEAL_800 }}
+>
+  New Shift
+</Button>
 
-          <Button
-            onClick={() => onCreateNewShift(undefined, true)}
-            icon={<TagIcon size={16} />}
-            style={{
-              borderColor: TEAL_700,
-              color: TEAL_700,
-              backgroundColor: "transparent",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = HOVER_BG;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "transparent";
-            }}
-          >
-            Unassigned
-          </Button>
+<Button
+  onClick={() => onCreateNewShift(undefined, true)} // Unassigned shift
+  icon={<TagIcon size={16} />}
+  style={{ borderColor: TEAL_700, color: TEAL_700, backgroundColor: "transparent" }}
+>
+  Unassigned
+</Button>
 
           <Button
             onClick={onPublishSchedule}

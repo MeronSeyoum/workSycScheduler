@@ -430,44 +430,49 @@ export const CreateShiftModal: React.FC<CreateShiftModalProps> = ({
         {/* Employee Section (only show for assigned shifts) */}
         {!isUnassigned && (
           <div className="-mt-3">
-            <Form.Item
-              name="employee"
-              label="Employee"
-              rules={[{ required: true, message: "Please select an employee" }]}
-              className="mb-4"
-            >
-              <Select
-                suffixIcon={<User size={16} className="text-gray-400" />}
-                placeholder="Select employee"
-                showSearch
-                optionFilterProp="children"
-                filterOption={(input, option) => {
-                  const children = option?.children;
-                  if (typeof children === "string") {
-                    return children;
-                  }
-                  return false;
-                }}
-              >
-                {filteredEmployees.map((employee) => (
-                  <Option key={employee.id} value={employee.first_name}>
-                    <div className="flex items-center gap-2">
-                      {employee.avatar ? (
-                        <Avatar src={employee.avatar} size="small" />
-                      ) : (
-                        <Avatar size="small" className="bg-teal-500 text-white">
-                          {employee.first_name?.charAt(0).toUpperCase()}
-                        </Avatar>
-                      )}
-                      <span>{employee.first_name} </span>
-                      <span className="inline-block px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-md ml-2">
-                        {employee.position}
-                      </span>
-                    </div>
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
+<Form.Item
+  name="employee"
+  label="Employee"
+  rules={[{ required: !isUnassigned, message: "Please select an employee" }]}
+  className="mb-4"
+>
+  <Select
+    suffixIcon={<User size={16} className="text-gray-400" />}
+    placeholder="Select employee"
+    showSearch
+    optionFilterProp="children"
+    filterOption={(input, option) => {
+      if (option?.children) {
+        return String(option.children).toLowerCase().includes(input.toLowerCase());
+      }
+      return false;
+    }}
+  >
+    {filteredEmployees.map((employee) => {
+      const firstName = employee.first_name || '';
+      const lastName = employee.last_name || '';
+      const displayName = `${firstName} ${lastName}`.trim();
+      
+      return (
+        <Option key={employee.id} value={employee.id.toString()}>
+          <div className="flex items-center gap-2">
+            {employee.avatar ? (
+              <Avatar src={employee.avatar} size="small" />
+            ) : (
+              <Avatar size="small" className="bg-teal-500 text-white">
+                {firstName?.charAt(0).toUpperCase() || 'U'}
+              </Avatar>
+            )}
+            <span>{displayName}</span>
+            <span className="inline-block px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-md ml-2">
+              {employee.position}
+            </span>
+          </div>
+        </Option>
+      );
+    })}
+  </Select>
+</Form.Item>
           </div>
         )}
 
