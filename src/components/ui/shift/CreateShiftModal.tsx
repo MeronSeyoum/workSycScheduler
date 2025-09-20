@@ -456,10 +456,10 @@ export const CreateShiftModal: React.FC<CreateShiftModalProps> = ({
                         <Avatar src={employee.avatar} size="small" />
                       ) : (
                         <Avatar size="small" className="bg-teal-500 text-white">
-                          {employee.name?.charAt(0).toUpperCase()}
+                          {employee.user.first_name?.charAt(0).toUpperCase()}
                         </Avatar>
                       )}
-                      <span>{employee.name} </span>
+                      <span>{employee.user.first_name} </span>
                       <span className="inline-block px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-md ml-2">
                         {employee.position}
                       </span>
