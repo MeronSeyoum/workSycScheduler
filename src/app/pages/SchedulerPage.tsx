@@ -1465,7 +1465,7 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
                 {/* Create Shift Modal */}
                 <CreateShiftModal
                   visible={state.isCreateShiftModalVisible}
-                  onCancel={handleCancelShift}
+                  onCancel={() => {}}
                   onSave={handleSaveShift}
                   employees={state.employees} // Pass full employee objects
                   positions={Array.from(
