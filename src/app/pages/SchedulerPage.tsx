@@ -938,7 +938,8 @@ const handleCreateNewShift = useCallback((date?: string, isUnassigned: boolean =
   /**
    * Handles saving new shift - supports both assigned and unassigned shifts
    */
- const handleSaveShift = useCallback(async (shiftData: any) => {
+ 
+const handleSaveShift = useCallback(async (shiftData: any) => {
   if (!token || !state.selectedLocation) {
     showNotification("error", "Error", "Authentication or location required");
     return;
@@ -950,54 +951,63 @@ const handleCreateNewShift = useCallback((date?: string, isUnassigned: boolean =
       loading: { ...prev.loading, shifts: true },
     }));
 
-    // Case 1: Unassigned shift
+    // Case 1: Unassigned shift (keep original logic - only update state)
     if (state.isCreateUnassignedModal) {
-      console.log('Creating unassigned shift');
+      console.log('Creating unassigned shift (local state only)');
       
       const selectedClient = state.clients.find(
         (c) => c.id === parseInt(state.selectedLocation!.id)
       );
       if (!selectedClient) throw new Error("Client not found");
 
-      // Create via API for unassigned shift
-      const createShiftDto: CreateShiftWithEmployeesDto = {
-        client_id: state.selectedLocation!.id.toString(),
+      const newUnassignedShift: ShiftWithEmployees = {
+        id: Date.now(), // Temporary ID for local state
         date: shiftData.date,
         start_time: shiftData.startTime,
         end_time: shiftData.endTime,
-        employee_ids: [], // Empty array for unassigned
+        break_duration: shiftData.breakDuration,
+        client_id: parseInt(state.selectedLocation!.id),
+        client: {
+          id: selectedClient.id,
+          business_name: selectedClient.business_name,
+          email: selectedClient.email || "",
+          phone: selectedClient.phone || "",
+          contact_person: selectedClient.contact_person || "",
+          location_address: selectedClient.location_address || {
+            city: "",
+            state: "",
+            street: "",
+            country: "",
+            postal_code: "",
+          },
+          status: selectedClient.status || "active",
+          notes: selectedClient.notes || null,
+        },
+        employees: [],
         shift_type: "regular",
         notes: shiftData.note,
-        // status: shiftData.publish ? 'scheduled' : 'draft' as ShiftStatus,
-        // name: shiftData.name || `Unassigned Shift ${Date.now()}`,
+        status: (shiftData.publish ? "scheduled" : "draft") as ShiftStatus,
+        name: shiftData.name || `Unassigned Shift ${Date.now()}`,
+        created_at: dayjs().format(),
+        updated_at: dayjs().format(),
+        created_by: 1,
       };
-
-      const response = await apiCall.shifts.createShift(createShiftDto, token);
-      
-      let newShift: ShiftWithEmployees;
-      if (response.shift) {
-        newShift = response.shift;
-      } else if ((response as unknown as ShiftWithEmployees).id) {
-        newShift = response as unknown as ShiftWithEmployees;
-      } else {
-        throw new Error("Invalid API response format");
-      }
 
       if (shiftData.publish) {
         setState((prev) => ({
           ...prev,
-          unassignedShifts: [...prev.unassignedShifts, newShift],
+          unassignedShifts: [...prev.unassignedShifts, newUnassignedShift],
         }));
       } else {
         setState((prev) => ({
           ...prev,
-          draftShifts: [...prev.draftShifts, newShift],
+          draftShifts: [...prev.draftShifts, newUnassignedShift],
         }));
       }
     } 
-    // Case 2: Assigned shift with specific employee (from grid click)
+    // Case 2: Assigned shift with specific employee (from grid click) - use API
     else if (state.selectedEmployeeForModal) {
-      console.log('Creating assigned shift for specific employee:', state.selectedEmployeeForModal);
+      console.log('Creating assigned shift for specific employee via API:', state.selectedEmployeeForModal);
       
       const employee = state.employees.find(
         (e) => e.id === state.selectedEmployeeForModal
@@ -1047,9 +1057,9 @@ const handleCreateNewShift = useCallback((date?: string, isUnassigned: boolean =
         }));
       }
     }
-    // Case 3: Assigned shift without specific employee (from header - user selects from dropdown)
+    // Case 3: Assigned shift without specific employee (from header - user selects from dropdown) - use API
     else if (shiftData.employee) {
-      console.log('Creating shift with employee selected from dropdown:', shiftData.employee);
+      console.log('Creating shift with employee selected from dropdown via API:', shiftData.employee);
       
       const employee = state.employees.find(e => e.id === parseInt(shiftData.employee));
       if (!employee) throw new Error("Employee not found");
@@ -1115,18 +1125,6 @@ const handleCreateNewShift = useCallback((date?: string, isUnassigned: boolean =
     }));
   }
 }, [token, state.selectedLocation, state.employees, state.clients, state.isCreateUnassignedModal, state.selectedEmployeeForModal, showNotification]);
-
-  /**
-   * Cancels shift creation modal
-   */
-  const handleCancelShift = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      isCreateShiftModalVisible: false,
-      selectedDateForModal: undefined,
-    }));
-  }, []);
-
   // =====================================================
   // SCHEDULE MANAGEMENT HANDLERS
   // =====================================================
