@@ -11,6 +11,7 @@ export interface Employee {
   last_name: string;
   email: string;
   employee_code: string;
+  phone_number: string;
   position: string;
   profile_image_url?: string ;
   status: 'active' | 'on_leave' | 'terminated' | 'inactive' | 'suspended';

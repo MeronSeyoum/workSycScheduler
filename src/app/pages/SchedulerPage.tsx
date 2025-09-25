@@ -66,7 +66,7 @@ import { Skeleton } from "@/components/ui/common/skeleton";
 
 // Type imports - business logic types
 import { Employee } from "@/lib/types/employee";
-import { ComponentState, StatsData } from "@/lib/types/schedule";
+import { ComponentState, ScheduleTemplate, StatsData } from "@/lib/types/schedule";
 import {
   ShiftWithEmployees,
   CreateShiftWithEmployeesDto,
@@ -77,6 +77,9 @@ import {
 // Service imports - API and authentication
 import { useAuth } from "../../components/providers/AuthProvider";
 import { api as apiCall } from "@/lib/api";
+import { WeekCopyPasteModal } from "@/components/ui/shift/WeekCopyPasteModal";
+import { ScheduleTemplateModal } from "@/components/ui/shift/ScheduleTemplateModal";
+import { templateStorage, weekScheduleUtils } from "@/lib/utils/weekScheduleUtils";
 
 // =====================================================
 // CONSTANTS AND CONFIGURATION
@@ -255,6 +258,13 @@ const calculateStats = (
  * - Schedule publishing
  * - Compliance monitoring
  * - AI-powered optimization
+ *
+ * - handleCopyWeek
+ * -handlePasteWeek
+ * - handleSaveAsTemplate
+ * - handleApplyTemplate
+ * - handleDeleteTemplate
+ * - loadTemplates
  */
 export const SchedulerPage: React.FC = () => {
   // =====================================================
@@ -335,6 +345,12 @@ export const SchedulerPage: React.FC = () => {
       pendingSwaps: new Map(),
       pendingDeletes: new Set(),
     },
+    copiedWeekSchedule: null,
+    scheduleTemplates: [],
+    isCopyWeekModalVisible: false,
+    isTemplateModalVisible: false,
+    templateName: "",
+    templateDescription: "",
   });
 
   const optimisticUpdateRef = useRef(createOptimisticUpdater(setState));
@@ -908,16 +924,19 @@ export const SchedulerPage: React.FC = () => {
   /**
    * Opens create shift modal for new unassigned shift
    */
-// For the "New Shift" button in header - no specific employee
-const handleCreateNewShift = useCallback((date?: string, isUnassigned: boolean = false) => {
-  setState((prev) => ({
-    ...prev,
-    isCreateShiftModalVisible: true,
-    isCreateUnassignedModal: isUnassigned,
-    selectedDateForModal: date,
-    selectedEmployeeForModal: undefined, // Explicitly undefined
-  }));
-}, []);
+  // For the "New Shift" button in header - no specific employee
+  const handleCreateNewShift = useCallback(
+    (date?: string, isUnassigned: boolean = false) => {
+      setState((prev) => ({
+        ...prev,
+        isCreateShiftModalVisible: true,
+        isCreateUnassignedModal: isUnassigned,
+        selectedDateForModal: date,
+        selectedEmployeeForModal: undefined, // Explicitly undefined
+      }));
+    },
+    []
+  );
 
   /**
    * Opens create shift modal for specific employee and date
@@ -932,199 +951,235 @@ const handleCreateNewShift = useCallback((date?: string, isUnassigned: boolean =
     }));
   }, []);
 
+
   /**
    * Handles saving new shift - supports both assigned and unassigned shifts
    */
-  /**
-   * Handles saving new shift - supports both assigned and unassigned shifts
-   */
- 
-const handleSaveShift = useCallback(async (shiftData: any) => {
-  if (!token || !state.selectedLocation) {
-    showNotification("error", "Error", "Authentication or location required");
-    return;
-  }
 
-  try {
-    setState((prev) => ({
-      ...prev,
-      loading: { ...prev.loading, shifts: true },
-    }));
-
-    // Case 1: Unassigned shift (keep original logic - only update state)
-    if (state.isCreateUnassignedModal) {
-      console.log('Creating unassigned shift (local state only)');
-      
-      const selectedClient = state.clients.find(
-        (c) => c.id === parseInt(state.selectedLocation!.id)
-      );
-      if (!selectedClient) throw new Error("Client not found");
-
-      const newUnassignedShift: ShiftWithEmployees = {
-        id: Date.now(), // Temporary ID for local state
-        date: shiftData.date,
-        start_time: shiftData.startTime,
-        end_time: shiftData.endTime,
-        break_duration: shiftData.breakDuration,
-        client_id: parseInt(state.selectedLocation!.id),
-        client: {
-          id: selectedClient.id,
-          business_name: selectedClient.business_name,
-          email: selectedClient.email || "",
-          phone: selectedClient.phone || "",
-          contact_person: selectedClient.contact_person || "",
-          location_address: selectedClient.location_address || {
-            city: "",
-            state: "",
-            street: "",
-            country: "",
-            postal_code: "",
-          },
-          status: selectedClient.status || "active",
-          notes: selectedClient.notes || null,
-        },
-        employees: [],
-        shift_type: "regular",
-        notes: shiftData.note,
-        status: (shiftData.publish ? "scheduled" : "draft") as ShiftStatus,
-        name: shiftData.name || `Unassigned Shift ${Date.now()}`,
-        created_at: dayjs().format(),
-        updated_at: dayjs().format(),
-        created_by: 1,
-      };
-
-      if (shiftData.publish) {
-        setState((prev) => ({
-          ...prev,
-          unassignedShifts: [...prev.unassignedShifts, newUnassignedShift],
-        }));
-      } else {
-        setState((prev) => ({
-          ...prev,
-          draftShifts: [...prev.draftShifts, newUnassignedShift],
-        }));
-      }
-    } 
-    // Case 2: Assigned shift with specific employee (from grid click) - use API
-    else if (state.selectedEmployeeForModal) {
-      console.log('Creating assigned shift for specific employee via API:', state.selectedEmployeeForModal);
-      
-      const employee = state.employees.find(
-        (e) => e.id === state.selectedEmployeeForModal
-      );
-      if (!employee) throw new Error("Employee not found");
-
-      const createShiftDto: CreateShiftWithEmployeesDto = {
-        client_id: state.selectedLocation!.id.toString(),
-        date: shiftData.date,
-        start_time: shiftData.startTime,
-        end_time: shiftData.endTime,
-        employee_ids: [employee.id],
-        shift_type: "regular",
-        notes: shiftData.note,
-        // status: shiftData.publish ? 'scheduled' : 'draft' as ShiftStatus,
-      };
-
-      const response = await apiCall.shifts.createShift(createShiftDto, token);
-      
-      let newShift: ShiftWithEmployees;
-      if (response.shift) {
-        newShift = response.shift;
-      } else if ((response as unknown as ShiftWithEmployees).id) {
-        newShift = response as unknown as ShiftWithEmployees;
-      } else {
-        throw new Error("Invalid API response format");
+  const handleSaveShift = useCallback(
+    async (shiftData: any) => {
+      if (!token || !state.selectedLocation) {
+        showNotification(
+          "error",
+          "Error",
+          "Authentication or location required"
+        );
+        return;
       }
 
-      if (shiftData.publish) {
+      try {
         setState((prev) => ({
           ...prev,
-          shifts: [...prev.shifts, newShift],
+          loading: { ...prev.loading, shifts: true },
         }));
-      } else {
-        const draftShift: ShiftWithEmployees = {
-          ...newShift,
-          status: "draft" as ShiftStatus,
-          employees: newShift.employees ? newShift.employees.map((emp: any) => ({
-            ...emp,
-            status: "scheduled" as ShiftStatus,
-          })) : [],
-        };
-        
+
+        // Case 1: Unassigned shift (keep original logic - only update state)
+        if (state.isCreateUnassignedModal) {
+          console.log("Creating unassigned shift (local state only)");
+
+          const selectedClient = state.clients.find(
+            (c) => c.id === parseInt(state.selectedLocation!.id)
+          );
+          if (!selectedClient) throw new Error("Client not found");
+
+          const newUnassignedShift: ShiftWithEmployees = {
+            id: Date.now(), // Temporary ID for local state
+            date: shiftData.date,
+            start_time: shiftData.startTime,
+            end_time: shiftData.endTime,
+            break_duration: shiftData.breakDuration,
+            client_id: parseInt(state.selectedLocation!.id),
+            client: {
+              id: selectedClient.id,
+              business_name: selectedClient.business_name,
+              email: selectedClient.email || "",
+              phone: selectedClient.phone || "",
+              contact_person: selectedClient.contact_person || "",
+              location_address: selectedClient.location_address || {
+                city: "",
+                state: "",
+                street: "",
+                country: "",
+                postal_code: "",
+              },
+              status: selectedClient.status || "active",
+              notes: selectedClient.notes || null,
+            },
+            employees: [],
+            shift_type: "regular",
+            notes: shiftData.note,
+            status: (shiftData.publish ? "scheduled" : "draft") as ShiftStatus,
+            name: shiftData.name || `Unassigned Shift ${Date.now()}`,
+            created_at: dayjs().format(),
+            updated_at: dayjs().format(),
+            created_by: 1,
+          };
+
+          if (shiftData.publish) {
+            setState((prev) => ({
+              ...prev,
+              unassignedShifts: [...prev.unassignedShifts, newUnassignedShift],
+            }));
+          } else {
+            setState((prev) => ({
+              ...prev,
+              draftShifts: [...prev.draftShifts, newUnassignedShift],
+            }));
+          }
+        }
+        // Case 2: Assigned shift with specific employee (from grid click) - use API
+        else if (state.selectedEmployeeForModal) {
+          console.log(
+            "Creating assigned shift for specific employee via API:",
+            state.selectedEmployeeForModal
+          );
+
+          const employee = state.employees.find(
+            (e) => e.id === state.selectedEmployeeForModal
+          );
+          if (!employee) throw new Error("Employee not found");
+
+          const createShiftDto: CreateShiftWithEmployeesDto = {
+            client_id: state.selectedLocation!.id.toString(),
+            date: shiftData.date,
+            start_time: shiftData.startTime,
+            end_time: shiftData.endTime,
+            employee_ids: [employee.id],
+            shift_type: "regular",
+            notes: shiftData.note,
+            // status: shiftData.publish ? 'scheduled' : 'draft' as ShiftStatus,
+          };
+
+          const response = await apiCall.shifts.createShift(
+            createShiftDto,
+            token
+          );
+
+          let newShift: ShiftWithEmployees;
+          if (response.shift) {
+            newShift = response.shift;
+          } else if ((response as unknown as ShiftWithEmployees).id) {
+            newShift = response as unknown as ShiftWithEmployees;
+          } else {
+            throw new Error("Invalid API response format");
+          }
+
+          if (shiftData.publish) {
+            setState((prev) => ({
+              ...prev,
+              shifts: [...prev.shifts, newShift],
+            }));
+          } else {
+            const draftShift: ShiftWithEmployees = {
+              ...newShift,
+              status: "draft" as ShiftStatus,
+              employees: newShift.employees
+                ? newShift.employees.map((emp: any) => ({
+                    ...emp,
+                    status: "scheduled" as ShiftStatus,
+                  }))
+                : [],
+            };
+
+            setState((prev) => ({
+              ...prev,
+              draftShifts: [...prev.draftShifts, draftShift],
+            }));
+          }
+        }
+        // Case 3: Assigned shift without specific employee (from header - user selects from dropdown) - use API
+        else if (shiftData.employee) {
+          console.log(
+            "Creating shift with employee selected from dropdown via API:",
+            shiftData.employee
+          );
+
+          const employee = state.employees.find(
+            (e) => e.id === parseInt(shiftData.employee)
+          );
+          if (!employee) throw new Error("Employee not found");
+
+          const createShiftDto: CreateShiftWithEmployeesDto = {
+            client_id: state.selectedLocation!.id.toString(),
+            date: shiftData.date,
+            start_time: shiftData.startTime,
+            end_time: shiftData.endTime,
+            employee_ids: [employee.id],
+            shift_type: "regular",
+            notes: shiftData.note,
+            // status: shiftData.publish ? 'scheduled' : 'draft' as ShiftStatus,
+          };
+
+          const response = await apiCall.shifts.createShift(
+            createShiftDto,
+            token
+          );
+
+          let newShift: ShiftWithEmployees;
+          if (response.shift) {
+            newShift = response.shift;
+          } else if ((response as unknown as ShiftWithEmployees).id) {
+            newShift = response as unknown as ShiftWithEmployees;
+          } else {
+            throw new Error("Invalid API response format");
+          }
+
+          if (shiftData.publish) {
+            setState((prev) => ({
+              ...prev,
+              shifts: [...prev.shifts, newShift],
+            }));
+          } else {
+            const draftShift: ShiftWithEmployees = {
+              ...newShift,
+              status: "draft" as ShiftStatus,
+              employees: newShift.employees
+                ? newShift.employees.map((emp: any) => ({
+                    ...emp,
+                    status: "scheduled" as ShiftStatus,
+                  }))
+                : [],
+            };
+
+            setState((prev) => ({
+              ...prev,
+              draftShifts: [...prev.draftShifts, draftShift],
+            }));
+          }
+        }
+        // Case 4: No employee selected at all
+        else {
+          throw new Error("Please select an employee for this shift");
+        }
+
+        showNotification(
+          "success",
+          "Shift Created",
+          "Shift was successfully created"
+        );
+      } catch (error) {
+        console.error("Failed to create shift:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to create shift";
+        showNotification("error", "Create Shift Failed", errorMessage);
+      } finally {
         setState((prev) => ({
           ...prev,
-          draftShifts: [...prev.draftShifts, draftShift],
+          loading: { ...prev.loading, shifts: false },
+          isCreateShiftModalVisible: false,
         }));
       }
-    }
-    // Case 3: Assigned shift without specific employee (from header - user selects from dropdown) - use API
-    else if (shiftData.employee) {
-      console.log('Creating shift with employee selected from dropdown via API:', shiftData.employee);
-      
-      const employee = state.employees.find(e => e.id === parseInt(shiftData.employee));
-      if (!employee) throw new Error("Employee not found");
-
-      const createShiftDto: CreateShiftWithEmployeesDto = {
-        client_id: state.selectedLocation!.id.toString(),
-        date: shiftData.date,
-        start_time: shiftData.startTime,
-        end_time: shiftData.endTime,
-        employee_ids: [employee.id],
-        shift_type: "regular",
-        notes: shiftData.note,
-        // status: shiftData.publish ? 'scheduled' : 'draft' as ShiftStatus,
-      };
-
-      const response = await apiCall.shifts.createShift(createShiftDto, token);
-      
-      let newShift: ShiftWithEmployees;
-      if (response.shift) {
-        newShift = response.shift;
-      } else if ((response as unknown as ShiftWithEmployees).id) {
-        newShift = response as unknown as ShiftWithEmployees;
-      } else {
-        throw new Error("Invalid API response format");
-      }
-
-      if (shiftData.publish) {
-        setState((prev) => ({
-          ...prev,
-          shifts: [...prev.shifts, newShift],
-        }));
-      } else {
-        const draftShift: ShiftWithEmployees = {
-          ...newShift,
-          status: "draft" as ShiftStatus,
-          employees: newShift.employees ? newShift.employees.map((emp: any) => ({
-            ...emp,
-            status: "scheduled" as ShiftStatus,
-          })) : [],
-        };
-        
-        setState((prev) => ({
-          ...prev,
-          draftShifts: [...prev.draftShifts, draftShift],
-        }));
-      }
-    }
-    // Case 4: No employee selected at all
-    else {
-      throw new Error("Please select an employee for this shift");
-    }
-
-    showNotification("success", "Shift Created", "Shift was successfully created");
-  } catch (error) {
-    console.error("Failed to create shift:", error);
-    const errorMessage = error instanceof Error ? error.message : "Failed to create shift";
-    showNotification("error", "Create Shift Failed", errorMessage);
-  } finally {
-    setState((prev) => ({
-      ...prev,
-      loading: { ...prev.loading, shifts: false },
-      isCreateShiftModalVisible: false,
-    }));
-  }
-}, [token, state.selectedLocation, state.employees, state.clients, state.isCreateUnassignedModal, state.selectedEmployeeForModal, showNotification]);
+    },
+    [
+      token,
+      state.selectedLocation,
+      state.employees,
+      state.clients,
+      state.isCreateUnassignedModal,
+      state.selectedEmployeeForModal,
+      showNotification,
+    ]
+  );
   // =====================================================
   // SCHEDULE MANAGEMENT HANDLERS
   // =====================================================
@@ -1302,6 +1357,548 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
   }, [state.selectedLocation, showNotification, fetchShiftsData]);
 
   // =====================================================
+  // Copy paste and template functions
+  // =====================================================
+
+  /**
+   * Copy current week schedule to clipboard
+   */
+  const handleCopyWeek = useCallback(() => {
+    if (!state.selectedLocation) {
+      showNotification(
+        "warning",
+        "No Location",
+        "Please select a location first"
+      );
+      return;
+    }
+
+    if (
+      displayedShifts.length === 0 &&
+      state.draftShifts.length === 0 &&
+      state.unassignedShifts.length === 0
+    ) {
+      showNotification(
+        "info",
+        "No Shifts",
+        "No shifts to copy in current week"
+      );
+      return;
+    }
+
+    const weekSchedule = weekScheduleUtils.extractWeekSchedule(
+      displayedShifts,
+      state.draftShifts,
+      state.unassignedShifts,
+      state.dateRange[0],
+      state.selectedLocation.id,
+      state.selectedLocation.name
+    );
+
+    setState((prev) => ({
+      ...prev,
+      copiedWeekSchedule: weekSchedule,
+    }));
+
+    const weekRange = weekScheduleUtils.formatWeekRange(weekSchedule.weekStart);
+    showNotification(
+      "success",
+      "Week Copied",
+      `Copied ${weekSchedule.metadata.totalShifts} shifts from ${weekRange}`
+    );
+  }, [
+    displayedShifts,
+    state.draftShifts,
+    state.unassignedShifts,
+    state.selectedLocation,
+    state.dateRange,
+    showNotification,
+  ]);
+
+  /**
+   * Paste copied week to current or selected week
+   */
+  /**
+ * Paste copied week to current or selected week
+ */
+const handlePasteWeek = useCallback(
+  async (targetWeekStart?: Dayjs) => {
+    if (!state.copiedWeekSchedule || !token || !state.selectedLocation) {
+      showNotification(
+        "warning",
+        "Cannot Paste",
+        "No copied week data available"
+      );
+      return;
+    }
+
+    const targetWeek = targetWeekStart || state.dateRange[0];
+    const sourceWeekStart = dayjs(state.copiedWeekSchedule.weekStart);
+
+    // Validate the operation
+    const validation = weekScheduleUtils.validateWeekCopy(
+      state.copiedWeekSchedule,
+      targetWeek,
+      state.employees
+    );
+
+    if (!validation.isValid) {
+      showNotification(
+        "error",
+        "Cannot Paste Week",
+        validation.errors.join(". ")
+      );
+      return;
+    }
+
+    if (validation.warnings.length > 0) {
+      console.warn("Week paste warnings:", validation.warnings);
+    }
+
+    try {
+      setState((prev) => ({
+        ...prev,
+        loading: { ...prev.loading, shifts: true },
+      }));
+
+      // Helper function to format time to HH:mm
+      const formatTimeForAPI = (time: string) => {
+        if (!time) return '';
+        return time.replace(/:\d{2}$/, '');
+      };
+
+      // Transform shifts to target week
+      const transformedShifts = weekScheduleUtils.transformShiftsToTargetWeek(
+        state.copiedWeekSchedule.shifts,
+        sourceWeekStart,
+        targetWeek
+      );
+
+      // Separate assigned and unassigned shifts
+      const assignedShifts = transformedShifts.filter(
+        (shift) => !shift.isUnassigned
+      );
+      const unassignedShifts = transformedShifts.filter(
+        (shift) => shift.isUnassigned
+      );
+
+      let createdCount = 0;
+
+      // Create assigned shifts via API
+      for (const shiftData of assignedShifts) {
+        try {
+          const createDto: CreateShiftWithEmployeesDto = {
+            client_id: state.selectedLocation.id.toString(),
+            date: shiftData.date,
+            start_time: formatTimeForAPI(shiftData.start_time),
+            end_time: formatTimeForAPI(shiftData.end_time),
+            employee_ids: shiftData.employee_ids,
+            shift_type: shiftData.shift_type,
+            notes: shiftData.notes,
+          };
+
+          await apiCall.shifts.createShift(createDto, token);
+          createdCount++;
+        } catch (error) {
+          console.error(
+            `Failed to create shift for ${shiftData.date}:`,
+            error
+          );
+          // Continue with other shifts
+        }
+      }
+
+      // Handle unassigned shifts by updating local state
+      const newUnassignedShifts = unassignedShifts.map((shiftData) => {
+        const selectedClient = state.clients.find(
+          (c) => c.id === parseInt(state.selectedLocation!.id)
+        );
+
+        const newShift: ShiftWithEmployees = {
+          id: Date.now() + Math.random(), // Temporary ID
+          date: shiftData.date,
+          start_time: shiftData.start_time,
+          end_time: shiftData.end_time,
+          break_duration: shiftData.originalShift.break_duration,
+          client_id: parseInt(state.selectedLocation!.id),
+          client: selectedClient
+            ? {
+                id: selectedClient.id,
+                business_name: selectedClient.business_name,
+                email: selectedClient.email || "",
+                phone: selectedClient.phone || "",
+                contact_person: selectedClient.contact_person || "",
+                location_address: selectedClient.location_address || {
+                  city: "",
+                  state: "",
+                  street: "",
+                  country: "",
+                  postal_code: "",
+                },
+                status: selectedClient.status || "active",
+                notes: selectedClient.notes || null,
+              }
+            : ({} as any),
+          employees: [],
+          shift_type: shiftData.shift_type || "regular",
+          notes: shiftData.notes,
+          status: shiftData.originalShift.status,
+          name: shiftData.originalShift.name || `Unassigned Shift`,
+          created_at: dayjs().format(),
+          updated_at: dayjs().format(),
+          created_by: 1,
+        };
+
+        return newShift;
+      });
+
+      // Update state with new unassigned shifts
+      if (newUnassignedShifts.length > 0) {
+        setState((prev) => ({
+          ...prev,
+          unassignedShifts: [
+            ...prev.unassignedShifts,
+            ...newUnassignedShifts,
+          ],
+        }));
+      }
+
+      // Refresh assigned shifts from API
+      await fetchShiftsData();
+
+      const targetWeekRange = weekScheduleUtils.formatWeekRange(
+        targetWeek.format("YYYY-MM-DD")
+      );
+      const totalCreated = createdCount + newUnassignedShifts.length;
+
+      showNotification(
+        "success",
+        "Week Pasted",
+        `Successfully pasted ${totalCreated} shifts to ${targetWeekRange}`
+      );
+    } catch (error) {
+      console.error("Paste week failed:", error);
+      showNotification(
+        "error",
+        "Paste Failed",
+        error instanceof Error
+          ? error.message
+          : "Failed to paste week schedule"
+      );
+    } finally {
+      setState((prev) => ({
+        ...prev,
+        loading: { ...prev.loading, shifts: false },
+      }));
+    }
+  },
+  [
+    state.copiedWeekSchedule,
+    state.selectedLocation,
+    state.employees,
+    state.dateRange,
+    state.clients,
+    state.unassignedShifts,
+    token,
+    fetchShiftsData,
+    showNotification,
+  ]
+);
+
+/**
+ * Apply template to current or specified week
+ */
+
+const handleApplyTemplate = useCallback(
+  async (templateId: string, targetWeekStart?: Dayjs) => {
+    const template = state.scheduleTemplates.find((t) => t.id === templateId);
+
+    if (!template || !token || !state.selectedLocation) {
+      showNotification(
+        "warning",
+        "Cannot Apply",
+        "Template not found or location not selected"
+      );
+      return;
+    }
+
+    const targetWeek = targetWeekStart || state.dateRange[0];
+    const sourceWeekStart = dayjs(template.weekSchedule.weekStart);
+
+    // Validate template application
+    const validation = weekScheduleUtils.validateWeekCopy(
+      template.weekSchedule,
+      targetWeek,
+      state.employees
+    );
+
+    if (!validation.isValid) {
+      showNotification(
+        "error",
+        "Cannot Apply Template",
+        validation.errors.join(". ")
+      );
+      return;
+    }
+
+    try {
+      setState((prev) => ({
+        ...prev,
+        loading: { ...prev.loading, shifts: true },
+      }));
+
+      // Helper function to format time to HH:mm
+      const formatTimeForAPI = (time: string) => {
+        if (!time) return '';
+        return time.replace(/:\d{2}$/, '');
+      };
+
+      // Transform template shifts to target week
+      const transformedShifts = weekScheduleUtils.transformShiftsToTargetWeek(
+        template.weekSchedule.shifts,
+        sourceWeekStart,
+        targetWeek
+      );
+
+      // Process shifts similar to paste operation
+      const assignedShifts = transformedShifts.filter(
+        (shift) => !shift.isUnassigned
+      );
+      const unassignedShifts = transformedShifts.filter(
+        (shift) => shift.isUnassigned
+      );
+
+      let createdCount = 0;
+
+      // Create assigned shifts
+      for (const shiftData of assignedShifts) {
+        try {
+          const createDto: CreateShiftWithEmployeesDto = {
+            client_id: state.selectedLocation.id.toString(),
+            date: shiftData.date,
+            start_time: formatTimeForAPI(shiftData.start_time),
+            end_time: formatTimeForAPI(shiftData.end_time),
+            employee_ids: shiftData.employee_ids,
+            shift_type: shiftData.shift_type,
+            notes: shiftData.notes,
+          };
+
+          await apiCall.shifts.createShift(createDto, token);
+          createdCount++;
+        } catch (error) {
+          console.error(`Failed to create shift from template:`, error);
+        }
+      }
+
+      // Handle unassigned shifts
+      const newUnassignedShifts = unassignedShifts.map((shiftData) => {
+        const selectedClient = state.clients.find(
+          (c) => c.id === parseInt(state.selectedLocation!.id)
+        );
+
+        return {
+          id: Date.now() + Math.random(),
+          date: shiftData.date,
+          start_time: shiftData.start_time,
+          end_time: shiftData.end_time,
+          break_duration: shiftData.originalShift.break_duration,
+          client_id: parseInt(state.selectedLocation!.id),
+          client: selectedClient
+            ? {
+                id: selectedClient.id,
+                business_name: selectedClient.business_name,
+                email: selectedClient.email || "",
+                phone: selectedClient.phone || "",
+                contact_person: selectedClient.contact_person || "",
+                location_address: selectedClient.location_address || {
+                  city: "",
+                  state: "",
+                  street: "",
+                  country: "",
+                  postal_code: "",
+                },
+                status: selectedClient.status || "active",
+                notes: selectedClient.notes || null,
+              }
+            : ({} as any),
+          employees: [],
+          shift_type: shiftData.shift_type || "regular",
+          notes: shiftData.notes,
+          status: shiftData.originalShift.status,
+          name: shiftData.originalShift.name || "Template Shift",
+          created_at: dayjs().format(),
+          updated_at: dayjs().format(),
+          created_by: 1,
+        } as ShiftWithEmployees;
+      });
+
+      if (newUnassignedShifts.length > 0) {
+        setState((prev) => ({
+          ...prev,
+          unassignedShifts: [
+            ...prev.unassignedShifts,
+            ...newUnassignedShifts,
+          ],
+        }));
+      }
+
+      await fetchShiftsData();
+
+      const targetWeekRange = weekScheduleUtils.formatWeekRange(
+        targetWeek.format("YYYY-MM-DD")
+      );
+      const totalCreated = createdCount + newUnassignedShifts.length;
+
+      showNotification(
+        "success",
+        "Template Applied",
+        `Applied "${template.name}" - created ${totalCreated} shifts for ${targetWeekRange}`
+      );
+    } catch (error) {
+      console.error("Apply template failed:", error);
+      showNotification("error", "Apply Failed", "Failed to apply template");
+    } finally {
+      setState((prev) => ({
+        ...prev,
+        loading: { ...prev.loading, shifts: false },
+      }));
+    }
+  },
+  [
+    state.scheduleTemplates,
+    state.selectedLocation,
+    state.dateRange,
+    state.employees,
+    state.clients,
+    state.unassignedShifts,
+    token,
+    fetchShiftsData,
+    showNotification,
+  ]
+);
+
+  /**
+   * Save current week as a template
+   */
+  const handleSaveAsTemplate = useCallback(
+    async (templateName: string, description?: string) => {
+      if (!state.selectedLocation) {
+        showNotification(
+          "warning",
+          "No Location",
+          "Please select a location first"
+        );
+        return;
+      }
+
+      if (
+        displayedShifts.length === 0 &&
+        state.draftShifts.length === 0 &&
+        state.unassignedShifts.length === 0
+      ) {
+        showNotification("info", "No Shifts", "No shifts to save as template");
+        return;
+      }
+
+      const weekSchedule = weekScheduleUtils.extractWeekSchedule(
+        displayedShifts,
+        state.draftShifts,
+        state.unassignedShifts,
+        state.dateRange[0],
+        state.selectedLocation.id,
+        state.selectedLocation.name
+      );
+
+      const template: ScheduleTemplate = {
+        id: `template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name: templateName,
+        description,
+        weekSchedule,
+        createdAt: dayjs().toISOString(),
+        updatedAt: dayjs().toISOString(),
+        createdBy: 1, // Replace with actual user ID from auth
+        tags: [state.selectedLocation.name, "custom"],
+      };
+
+      try {
+        // Save to storage (replace with API call when ready)
+        templateStorage.saveTemplate(template);
+
+        setState((prev) => ({
+          ...prev,
+          scheduleTemplates: [...prev.scheduleTemplates, template],
+          isTemplateModalVisible: false,
+          templateName: "",
+          templateDescription: "",
+        }));
+
+        showNotification(
+          "success",
+          "Template Saved",
+          `Template "${templateName}" saved successfully with ${template.weekSchedule.metadata.totalShifts} shifts`
+        );
+      } catch (error) {
+        console.error("Save template failed:", error);
+        showNotification("error", "Save Failed", "Failed to save template");
+      }
+    },
+    [
+      displayedShifts,
+      state.draftShifts,
+      state.unassignedShifts,
+      state.selectedLocation,
+      state.dateRange,
+      showNotification,
+    ]
+  );
+
+ 
+
+
+  /**
+   * Delete template
+   */
+  const handleDeleteTemplate = useCallback(
+    (templateId: string) => {
+      try {
+        templateStorage.deleteTemplate(templateId);
+
+        setState((prev) => ({
+          ...prev,
+          scheduleTemplates: prev.scheduleTemplates.filter(
+            (t) => t.id !== templateId
+          ),
+        }));
+
+        showNotification(
+          "success",
+          "Template Deleted",
+          "Template removed successfully"
+        );
+      } catch (error) {
+        console.error("Delete template failed:", error);
+        showNotification("error", "Delete Failed", "Failed to delete template");
+      }
+    },
+    [showNotification]
+  );
+
+  /**
+   * Load templates from storage on component mount
+   */
+  const loadTemplates = useCallback(async () => {
+    try {
+      const templates = templateStorage.getTemplates();
+      setState((prev) => ({
+        ...prev,
+        scheduleTemplates: templates,
+      }));
+    } catch (error) {
+      console.error("Load templates failed:", error);
+    }
+  }, []);
+
+  // =====================================================
   // EFFECT HOOKS (Side effects and lifecycle)
   // =====================================================
 
@@ -1387,6 +1984,14 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
     };
   }, []);
 
+  /**
+   * Load templates effect
+   * Load saved templates on component mount
+   */
+  useEffect(() => {
+    loadTemplates();
+  }, [loadTemplates]);
+
   // =====================================================
   // RENDER LOGIC
   // =====================================================
@@ -1460,12 +2065,40 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
                   onCreateNewShift={handleCreateNewShift}
                   onPublishSchedule={handlePublishSchedule}
                   onUndoChanges={handleUndoChanges}
+                  copiedWeekSchedule={state.copiedWeekSchedule}
+                  scheduleTemplates={state.scheduleTemplates}
+                  onCopyWeek={handleCopyWeek}
+                  onPasteWeek={() => handlePasteWeek()}
+                  onShowCopyPasteModal={() =>
+                    setState((prev) => ({
+                      ...prev,
+                      isCopyWeekModalVisible: true,
+                    }))
+                  }
+                  onShowTemplateModal={() =>
+                    setState((prev) => ({
+                      ...prev,
+                      isTemplateModalVisible: true,
+                    }))
+                  }
+                  onApplyTemplate={handleApplyTemplate}
+                  hasCurrentWeekData={
+                    displayedShifts.length > 0 ||
+                    state.draftShifts.length > 0 ||
+                    state.unassignedShifts.length > 0
+                  }
                 />
 
                 {/* Create Shift Modal */}
                 <CreateShiftModal
                   visible={state.isCreateShiftModalVisible}
-                  onCancel={() => {}}
+                  onCancel={() => 
+                    {  setState((prev) => ({
+                      ...prev,
+                      isCreateShiftModalVisible: false
+
+                      }))
+                    }}
                   onSave={handleSaveShift}
                   employees={state.employees} // Pass full employee objects
                   positions={Array.from(
@@ -1483,6 +2116,56 @@ const handleSaveShift = useCallback(async (shiftData: any) => {
                   )}
                 />
 
+                {/* Week Copy/Paste Modal */}
+                <WeekCopyPasteModal
+                  visible={state.isCopyWeekModalVisible}
+                  onCancel={() =>
+                    setState((prev) => ({
+                      ...prev,
+                      isCopyWeekModalVisible: false,
+                    }))
+                  }
+                  copiedWeekSchedule={state.copiedWeekSchedule}
+                  currentWeek={state.dateRange[0]}
+                  onCopyWeek={() => {
+                    handleCopyWeek();
+                    setState((prev) => ({
+                      ...prev,
+                      isCopyWeekModalVisible: false,
+                    }));
+                  }}
+                  onPasteWeek={(targetWeek) => {
+                    handlePasteWeek(targetWeek);
+                    setState((prev) => ({
+                      ...prev,
+                      isCopyWeekModalVisible: false,
+                    }));
+                  }}
+                  loading={state.loading.shifts}
+                />
+
+                {/* Schedule Template Modal */}
+                <ScheduleTemplateModal
+                  visible={state.isTemplateModalVisible}
+                  onCancel={() =>
+                    setState((prev) => ({
+                      ...prev,
+                      isTemplateModalVisible: false,
+                      templateName: "",
+                      templateDescription: "",
+                    }))
+                  }
+                  templates={state.scheduleTemplates}
+                  onSaveTemplate={handleSaveAsTemplate}
+                  onApplyTemplate={handleApplyTemplate}
+                  onDeleteTemplate={handleDeleteTemplate}
+                  hasCurrentWeekData={
+                    displayedShifts.length > 0 ||
+                    state.draftShifts.length > 0 ||
+                    state.unassignedShifts.length > 0
+                  }
+                  loading={state.loading.shifts}
+                />
                 {/* Error Display */}
                 {state.error && (
                   <Alert

@@ -117,7 +117,7 @@ const AdminDashboard = () => {
   }
 
   return (
-      <div className="min-h-screen max-w-7xl mx-auto space-y-6">
+      <div className="min-h-screen  mx-auto space-y-6">
         {/* Header with Date Range Selector */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>

@@ -1,3 +1,4 @@
+// CreateShiftModal.tsx - Optimized with standardized color scheme
 import React, { useState, useEffect } from "react";
 import {
   Modal,
@@ -11,6 +12,7 @@ import {
   Input,
   Popconfirm,
   Form,
+  Card,
 } from "antd";
 import dayjs from "dayjs";
 import {
@@ -29,6 +31,35 @@ import { FaRegClock } from "react-icons/fa";
 
 const { Option } = Select;
 const { TextArea } = Input;
+
+// Standardized Color Constants
+const COLORS = {
+  PRIMARY: "oklch(51.1% 0.096 186.391)",
+  PRIMARY_DARK: "oklch(43.7% 0.078 188.216)",
+  PRIMARY_LIGHT: "oklch(51.1% 0.096 186.391 / 0.1)",
+  PRIMARY_BG: "oklch(97.5% 0.013 186.391)",
+  PRIMARY_BORDER: "oklch(51.1% 0.096 186.391 / 0.2)",
+  
+  TEXT_PRIMARY: "#374151",
+  TEXT_SECONDARY: "#6b7280",
+  TEXT_DISABLED: "#9ca3af",
+  
+  BORDER_DEFAULT: "oklch(0% 0 0 / 0.15)",
+  BORDER_LIGHT: "#e5e7eb",
+  
+  BG_LIGHT: "#f8fafc",
+  BG_CARD: "#ffffff",
+  
+  SUCCESS: "#059669",
+  WARNING: "#d97706",
+  ERROR: "#dc2626",
+  INFO: "#2563eb",
+  
+  BLUE_BG: "#eff6ff",
+  BLUE_BORDER: "#bfdbfe",
+  PURPLE_BG: "#faf5ff",
+  PURPLE_BORDER: "#e9d5ff",
+} as const;
 
 interface Employee {
   id: number;
@@ -72,6 +103,33 @@ interface CreateShiftModalProps {
   selectedEmployee?: Employee;
 }
 
+// Reusable Section Card Component
+const SectionCard: React.FC<{
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+  bgColor?: string;
+  borderColor?: string;
+}> = ({ icon, title, children, bgColor = COLORS.BG_LIGHT, borderColor = COLORS.BLUE_BORDER }) => (
+  <Card 
+    className="w-full mb-4"
+    bodyStyle={{ padding: '8px 16px' }}
+    style={{
+      backgroundColor: bgColor,
+      border: `1px solid ${borderColor}`,
+      marginBottom: '10px' 
+    }}
+  >
+    <div className="flex items-center ">
+      <div style={{ color: COLORS.PRIMARY }}>{icon}</div>
+      <span className="font-medium ml-2" style={{ color: COLORS.TEXT_PRIMARY }}>
+        {title}
+      </span>
+    </div>
+    {children}
+  </Card>
+);
+
 export const CreateShiftModal: React.FC<CreateShiftModalProps> = ({
   visible,
   onCancel,
@@ -86,7 +144,7 @@ export const CreateShiftModal: React.FC<CreateShiftModalProps> = ({
   isEditMode = false,
   selectedEmployee,
 }) => {
-  const [form] = Form.useForm(); // Form instance
+  const [form] = Form.useForm();
   const [selectedPosition, setSelectedPosition] = useState<string>("");
   const [repeatOption, setRepeatOption] = useState<string>("never");
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
@@ -219,281 +277,342 @@ export const CreateShiftModal: React.FC<CreateShiftModalProps> = ({
 
   return (
     <Modal
-      title={modalTitle}
+      title={
+        <div className="flex items-center gap-2">
+          <Clock size={20} style={{ color: COLORS.PRIMARY }} />
+          <span style={{ color: COLORS.TEXT_PRIMARY, fontWeight: 600 }}>
+            {modalTitle}
+          </span>
+        </div>
+      }
       open={visible}
       onCancel={onCancel}
       footer={null}
       width={600}
-      closeIcon={<X size={18} />}
-      style={{
-        top: "20px",
+      closeIcon={<X size={18} style={{ color: COLORS.TEXT_SECONDARY }} />}
+      styles={{
+        body: { 
+          backgroundColor: COLORS.BG_LIGHT,
+          padding: '4px 24px',
+        }
       }}
     >
       <Form
-        form={form} // Connect the form instance
+        form={form}
         layout="vertical"
-        className="p-1"
+        className="space-y-4"
       >
         <Tabs
           defaultActiveKey="shift"
-          className="mb-2"
           items={[
             {
               key: "shift",
               label: (
-                <span className="flex items-center gap-2 ">
-                  <Clock size={16} /> Shift
+                <span className="flex items-center gap-2">
+                  <Clock size={16} style={{ color: COLORS.PRIMARY }} /> 
+                  Shift Details
                 </span>
+              ),
+              children: (
+                <div className="">
+                  {/* Date and Shift Name */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Form.Item
+                      name="date"
+                      label="Date"
+                      rules={[{ required: true, message: "Please select a date" }]}
+                    >
+                      <DatePicker
+                        format="ddd, MMM D, YYYY"
+                        className="w-full"
+                        suffixIcon={<Calendar size={16} style={{ color: COLORS.TEXT_DISABLED }} />}
+                        style={{ borderColor: COLORS.BORDER_DEFAULT }}
+                      />
+                    </Form.Item>
+
+                    {isUnassigned && (
+                      <Form.Item
+                        name="name"
+                        label="Shift Name"
+                        rules={[{ required: true, message: "Please enter a shift name" }]}
+                      >
+                        <Input
+                          prefix={<TagIcon size={16} style={{ color: COLORS.TEXT_DISABLED }} />}
+                          placeholder="Enter shift name"
+                          style={{ borderColor: COLORS.BORDER_DEFAULT }}
+                        />
+                      </Form.Item>
+                    )}
+                  </div>
+
+                  {/* Time Section */}
+                  <SectionCard
+                    icon={<FaRegClock size={16} />}
+                    title="Time"
+                    bgColor={COLORS.BLUE_BG}
+                    borderColor={COLORS.BLUE_BORDER}
+                    
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Form.Item
+                        name="startTime"
+                        label="Start"
+                        rules={[{ required: true, message: "Please select start time" }]}
+                        className="mb-0"
+                      >
+                        <TimePicker
+                          format="h:mm A"
+                          className="w-full"
+                          placeholder="9:00 AM"
+                          style={{ borderColor: COLORS.BORDER_DEFAULT }}
+                        />
+                      </Form.Item>
+
+                      <Form.Item
+                        name="endTime"
+                        label="End"
+                        rules={[{ required: true, message: "Please select end time" }]}
+                        className="mb-0"
+                      >
+                        <TimePicker
+                          format="h:mm A"
+                          className="w-full"
+                          placeholder="5:00 PM"
+                          style={{ borderColor: COLORS.BORDER_DEFAULT }}
+                        />
+                      </Form.Item>
+
+                      <Form.Item
+                        name="breakDuration"
+                        label="Break (min)"
+                        initialValue={30}
+                        className="mb-0"
+                      >
+                        <Select style={{ borderColor: COLORS.BORDER_DEFAULT }}>
+                          <Option value={0}>0 min</Option>
+                          <Option value={15}>15 min</Option>
+                          <Option value={30}>30 min</Option>
+                          <Option value={45}>45 min</Option>
+                          <Option value={60}>60 min</Option>
+                        </Select>
+                      </Form.Item>
+                    </div>
+                  </SectionCard>
+
+                  {/* Repeat Section */}
+                  <SectionCard
+                    icon={<Repeat size={16} />}
+                    title="Repeat"
+                    bgColor={COLORS.PURPLE_BG}
+                    borderColor={COLORS.PURPLE_BORDER}
+                    
+                  >
+                    <Form.Item className="mb-3">
+                      <Select
+                        value={repeatOption}
+                        onChange={setRepeatOption}
+                        className="w-full"
+                        style={{ borderColor: COLORS.BORDER_DEFAULT }}
+                      >
+                        {repeatOptions.map((option) => (
+                          <Option key={option.value} value={option.value}>
+                            {option.label}
+                          </Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
+
+                    {/* Repeat On Days */}
+                    {repeatOption !== "never" &&
+                      repeatOption !== "daily" &&
+                      repeatOption !== "weekdays" && (
+                        <div>
+                          <div className="text-sm mb-2" style={{ color: COLORS.TEXT_SECONDARY }}>
+                            Repeat on:
+                          </div>
+                          <div className="flex gap-1">
+                            {weekDays.map(({ name, number, date }) => (
+                              <div
+                                key={number}
+                                className={`flex flex-col items-center justify-center w-full h-12 cursor-pointer transition-colors rounded ${
+                                  selectedDays.includes(number)
+                                    ? "text-white"
+                                    : "text-gray-700 border border-gray-200 hover:border-blue-300"
+                                }`}
+                                style={{
+                                  backgroundColor: selectedDays.includes(number) 
+                                    ? COLORS.PRIMARY 
+                                    : COLORS.BG_CARD
+                                }}
+                                onClick={() => handleDaySelection(number)}
+                              >
+                                <div className="text-xs font-semibold">{name}</div>
+                                <div className="text-xs mt-0.5">{date}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                  </SectionCard>
+
+                  {/* Location and Position */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Form.Item
+                      name="client"
+                      label="Location"
+                      rules={[{ required: true, message: "Please select a location" }]}
+                    >
+                      <Select
+                        suffixIcon={<MapPin size={16} style={{ color: COLORS.TEXT_DISABLED }} />}
+                        placeholder="Select location"
+                        style={{ borderColor: COLORS.BORDER_DEFAULT }}
+                      >
+                        {clients.map((client) => (
+                          <Option key={client.id} value={client.business_name}>
+                            {client.business_name}
+                          </Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
+
+                    <Form.Item
+                      name="position"
+                      label="Position"
+                      rules={[{ required: true, message: "Please select a position" }]}
+                    >
+                      <Select
+                        suffixIcon={<Briefcase size={16} style={{ color: COLORS.TEXT_DISABLED }} />}
+                        placeholder="Select position"
+                        onChange={setSelectedPosition}
+                        style={{ borderColor: COLORS.BORDER_DEFAULT }}
+                      >
+                        {positions.map((position) => (
+                          <Option key={position} value={position}>
+                            {position}
+                          </Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
+                  </div>
+
+                  {/* Employee Section */}
+                  {!isUnassigned && (
+                    <Form.Item
+                      name="employee"
+                      label="Employee"
+                      rules={[{ required: !isUnassigned, message: "Please select an employee" }]}
+                    >
+                      <Select
+                        suffixIcon={<User size={16} style={{ color: COLORS.TEXT_DISABLED }} />}
+                        placeholder="Select employee"
+                        showSearch
+                        optionFilterProp="children"
+                        filterOption={(input, option) => {
+                          if (option?.children) {
+                            return String(option.children).toLowerCase().includes(input.toLowerCase());
+                          }
+                          return false;
+                        }}
+                        style={{ borderColor: COLORS.BORDER_DEFAULT }}
+                      >
+                        {filteredEmployees.map((employee) => {
+                          const firstName = employee.first_name || '';
+                          const lastName = employee.last_name || '';
+                          const displayName = `${firstName} ${lastName}`.trim();
+                          
+                          return (
+                            <Option key={employee.id} value={employee.id.toString()}>
+                              <div className="flex items-center gap-2">
+                                {employee.avatar ? (
+                                  <Avatar src={employee.avatar} size="small" />
+                                ) : (
+                                  <Avatar 
+                                    size="small" 
+                                    style={{ 
+                                      backgroundColor: COLORS.PRIMARY,
+                                      color: 'white'
+                                    }}
+                                  >
+                                    {firstName?.charAt(0).toUpperCase() || 'U'}
+                                  </Avatar>
+                                )}
+                                <span>{displayName}</span>
+                                <span 
+                                  className="inline-block px-2 py-0.5 text-xs rounded-md ml-2"
+                                  style={{ 
+                                    backgroundColor: COLORS.PRIMARY_LIGHT,
+                                    color: COLORS.PRIMARY
+                                  }}
+                                >
+                                  {employee.position}
+                                </span>
+                              </div>
+                            </Option>
+                          );
+                        })}
+                      </Select>
+                    </Form.Item>
+                  )}
+
+                  {/* Note Section */}
+                  <Form.Item name="note" label="Notes">
+                    <TextArea 
+                      rows={3} 
+                      placeholder="Add notes about this shift..." 
+                      style={{ borderColor: COLORS.BORDER_DEFAULT }}
+                    />
+                  </Form.Item>
+                </div>
               ),
             },
             {
               key: "templates",
               label: (
                 <span className="flex items-center gap-2">
-                  <TagIcon size={16} /> Templates
+                  <TagIcon size={16} style={{ color: COLORS.PRIMARY }} /> 
+                  Templates
                 </span>
+              ),
+              children: (
+                <div className="text-center py-8">
+                  <TagIcon size={48} style={{ color: COLORS.TEXT_DISABLED }} className="mx-auto mb-4" />
+                  <p style={{ color: COLORS.TEXT_SECONDARY }} className="font-medium">
+                    Shift Templates
+                  </p>
+                  <p style={{ color: COLORS.TEXT_DISABLED }} className="text-sm">
+                    Save and reuse common shift patterns
+                  </p>
+                </div>
               ),
             },
           ]}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 -mt-2 ">
-          {/* Date */}
-          <Form.Item
-            name="date"
-            label="Date"
-            rules={[{ required: true, message: "Please select a date" }]}
-            className="mb-0"
-          >
-            <DatePicker
-              format="ddd, MMM D, YYYY"
-              className="w-full"
-              suffixIcon={<Calendar size={16} />}
-            />
-          </Form.Item>
-
-          {/* Shift Name (for unassigned shifts) */}
-          {isUnassigned && (
-            <Form.Item
-              name="name"
-              label="Shift Name"
-              rules={[{ required: true, message: "Please enter a shift name" }]}
-              className="mb-0"
-            >
-              <Input
-                prefix={<TagIcon size={16} className="text-gray-400" />}
-                placeholder="Enter shift name"
-              />
-            </Form.Item>
-          )}
-        </div>
-
-        {/* Time Section */}
-        <div className="bg-gray-50 border border-blue-100 rounded-lg px-3 pt-3 mb-2 -mt-2">
-          <div className="flex items-center ">
-            <FaRegClock className="text-teal-700 mr-2" />
-            <span className="font-medium text-gray-700">Time</span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Form.Item
-              name="startTime"
-              label="Start"
-              rules={[{ required: true, message: "Please select start time" }]}
-              className="mb-0"
-            >
-              <TimePicker
-                format="h:mm A"
-                className="w-full"
-                placeholder="9:00 AM"
-              />
-            </Form.Item>
-
-            <Form.Item
-              name="endTime"
-              label="End"
-              rules={[{ required: true, message: "Please select end time" }]}
-              className="mb-0"
-            >
-              <TimePicker
-                format="h:mm A"
-                className="w-full"
-                placeholder="5:00 PM"
-              />
-            </Form.Item>
-
-            <Form.Item
-              name="breakDuration"
-              label="Break (min)"
-              initialValue={30}
-              className="mb-0"
-            >
-              <Select>
-                <Option value={0}>0 min</Option>
-                <Option value={15}>15 min</Option>
-                <Option value={30}>30 min</Option>
-                <Option value={45}>45 min</Option>
-                <Option value={60}>60 min</Option>
-              </Select>
-            </Form.Item>
-          </div>
-        </div>
-
-        {/* Repeat Section */}
-        <div className="bg-gray-50 border border-purple-100 rounded-lg p-4 mb-2">
-          <div className="flex items-center mb-2">
-            <Repeat size={16} className="text-teal-700 mr-2" />
-            <span className="font-medium text-gray-700">Repeat</span>
-          </div>
-
-          <Form.Item className="mb-1">
-            <Select
-              value={repeatOption}
-              onChange={setRepeatOption}
-              className="w-full"
-            >
-              {repeatOptions.map((option) => (
-                <Option key={option.value} value={option.value}>
-                  {option.label}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          {/* Repeat On Days - show when repeat is selected */}
-          {repeatOption !== "never" &&
-            repeatOption !== "daily" &&
-            repeatOption !== "weekdays" && (
-              <div className="">
-                <div className="text-sm mb-1 text-gray-600">Repeat on:</div>
-                <div className="flex gap-1">
-                  {weekDays.map(({ name, number, date }) => (
-                    <div
-                      key={number}
-                      className={`flex flex-col items-center justify-center w-full h-12  cursor-pointer transition-colors ${
-                        selectedDays.includes(number)
-                          ? "bg-teal-700 text-white"
-                          : "bg-white text-gray-700 border border-gray-200 hover:border-blue-300"
-                      }`}
-                      onClick={() => handleDaySelection(number)}
-                    >
-                      <div className="text-xs font-semibold">{name}</div>
-                      <div className="text-xs mt-0.5">{date}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ">
-          {/* Location Section */}
-          <Form.Item
-            name="client"
-            label="Location"
-            rules={[{ required: true, message: "Please select a location" }]}
-            className="mb-0"
-          >
-            <Select
-              suffixIcon={<MapPin size={16} className="text-gray-400" />}
-              placeholder="Select location"
-            >
-              {clients.map((client) => (
-                <Option key={client.id} value={client.business_name}>
-                  {client.business_name}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          {/* Position Section */}
-          <Form.Item
-            name="position"
-            label="Position"
-            rules={[{ required: true, message: "Please select a position" }]}
-            className="mb-0"
-          >
-            <Select
-              suffixIcon={<Briefcase size={16} className="text-gray-400" />}
-              placeholder="Select position"
-              onChange={setSelectedPosition}
-            >
-              {positions.map((position) => (
-                <Option key={position} value={position}>
-                  {position}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-        </div>
-
-        {/* Employee Section (only show for assigned shifts) */}
-        {!isUnassigned && (
-          <div className="-mt-3">
-<Form.Item
-  name="employee"
-  label="Employee"
-  rules={[{ required: !isUnassigned, message: "Please select an employee" }]}
-  className="mb-4"
->
-  <Select
-    suffixIcon={<User size={16} className="text-gray-400" />}
-    placeholder="Select employee"
-    showSearch
-    optionFilterProp="children"
-    filterOption={(input, option) => {
-      if (option?.children) {
-        return String(option.children).toLowerCase().includes(input.toLowerCase());
-      }
-      return false;
-    }}
-  >
-    {filteredEmployees.map((employee) => {
-      const firstName = employee.first_name || '';
-      const lastName = employee.last_name || '';
-      const displayName = `${firstName} ${lastName}`.trim();
-      
-      return (
-        <Option key={employee.id} value={employee.id.toString()}>
-          <div className="flex items-center gap-2">
-            {employee.avatar ? (
-              <Avatar src={employee.avatar} size="small" />
-            ) : (
-              <Avatar size="small" className="bg-teal-500 text-white">
-                {firstName?.charAt(0).toUpperCase() || 'U'}
-              </Avatar>
-            )}
-            <span>{displayName}</span>
-            <span className="inline-block px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-md ml-2">
-              {employee.position}
-            </span>
-          </div>
-        </Option>
-      );
-    })}
-  </Select>
-</Form.Item>
-          </div>
-        )}
-
-        <div className="-mt-4">
-          {/* Note Section */}
-          <Form.Item name="note" label="Notes" className="">
-            <TextArea rows={3} placeholder="Add notes about this shift..." />
-          </Form.Item>
-        </div>
-        
         {/* Publish Section */}
-        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-6">
-          <div className="flex items-center">
-            <MdPublish size={18} className="text-gray-600 mr-2" />
-            <span className="text-gray-700">Publish immediately</span>
+        <Card 
+          bodyStyle={{ padding: '16px' }}
+          style={{
+            backgroundColor: COLORS.BG_LIGHT,
+            border: `1px solid ${COLORS.BORDER_LIGHT}`
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <MdPublish size={18} style={{ color: COLORS.TEXT_SECONDARY }} className="mr-2" />
+              <span style={{ color: COLORS.TEXT_PRIMARY }}>Publish immediately</span>
+            </div>
+            <Switch 
+              checked={publishShift} 
+              onChange={setPublishShift}
+              style={{
+                backgroundColor: publishShift ? COLORS.PRIMARY : COLORS.TEXT_DISABLED
+              }}
+            />
           </div>
-          <Switch checked={publishShift} onChange={setPublishShift} />
-        </div>
+        </Card>
 
         {/* Footer Actions */}
-        <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+        <div className="flex justify-between items-center pt-4 border-t" style={{ borderColor: COLORS.BORDER_LIGHT }}>
           <div>
             {isEditMode && existingShift?.id && onDelete && (
               <Popconfirm
@@ -508,7 +627,8 @@ export const CreateShiftModal: React.FC<CreateShiftModalProps> = ({
                   type="text"
                   icon={<Trash2 size={16} />}
                   danger
-                  className="flex items-center text-red-500 hover:text-red-600"
+                  className="flex items-center"
+                  style={{ color: COLORS.ERROR }}
                 >
                   Delete Shift
                 </Button>
@@ -520,7 +640,10 @@ export const CreateShiftModal: React.FC<CreateShiftModalProps> = ({
             <Button
               onClick={onCancel}
               size="large"
-              className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-50"
+              style={{
+                borderColor: COLORS.BORDER_LIGHT,
+                color: COLORS.TEXT_PRIMARY
+              }}
             >
               Cancel
             </Button>
@@ -528,7 +651,10 @@ export const CreateShiftModal: React.FC<CreateShiftModalProps> = ({
               type="primary"
               onClick={handleSave}
               size="large"
-              className="px-6 py-2 bg-teal-600 hover:bg-teal-700 border-teal-600 hover:border-teal-700"
+              style={{
+                backgroundColor: COLORS.PRIMARY,
+                borderColor: COLORS.PRIMARY
+              }}
             >
               {isEditMode ? "Update Shift" : "Create Shift"}
             </Button>

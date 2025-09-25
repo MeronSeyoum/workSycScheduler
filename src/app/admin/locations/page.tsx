@@ -1,12 +1,12 @@
 'use client';
 
-import LocationPage from "@/app/pages/locationPage";
+import ClientManagementPage from "@/app/pages/ClientManagementPage";
 import AdminLayout from "../layout/AdminLayout";
 
 export default function AdminRootLayout() {
   return (
     <AdminLayout>
-        <LocationPage />
+        <ClientManagementPage />
     </AdminLayout>
   );
 }

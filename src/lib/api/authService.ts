@@ -13,7 +13,7 @@ export const login = async (email: string, password: string) => {
   });
 
   // Debug: log the actual response
-  console.log('Login API response:', response);
+  // console.log('Login API response:', response);
   
   return response;
 };

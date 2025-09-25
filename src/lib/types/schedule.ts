@@ -95,5 +95,37 @@ export interface ComponentState {
     pendingSwaps: Map<string, { shift1: ShiftWithEmployees; shift2: ShiftWithEmployees }>;
     pendingDeletes: Set<number>;
   };
-  
+  // Copy/Paste & Template state
+  copiedWeekSchedule: WeekScheduleData | null;
+  scheduleTemplates: ScheduleTemplate[];
+  isCopyWeekModalVisible: boolean;
+  isTemplateModalVisible: boolean;
+  templateName: string;
+  templateDescription: string;
+}
+
+export interface WeekScheduleData {
+  weekStart: string; // ISO date string (Monday of the week)
+  weekEnd: string; // ISO date string (Sunday of the week)
+  shifts: ShiftWithEmployees[];
+  metadata: {
+    totalShifts: number;
+    totalHours: number;
+    employeeCount: number;
+    locationId: string;
+    locationName: string;
+    createdAt: string;
+  };
+}
+
+export interface ScheduleTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  weekSchedule: WeekScheduleData;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: number;
+  isDefault?: boolean;
+  tags?: string[];
 }

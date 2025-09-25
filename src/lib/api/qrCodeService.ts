@@ -29,7 +29,7 @@ export const fetchQRCodes = async (
     method: 'GET',
   }, token);
   
-  console.log("QR code from service ", response);
+
   return response.data ?? { data: [], total: 0 };
 };
 
@@ -86,18 +86,34 @@ export const deleteQRCode = async (id: number, token: string): Promise<void> => 
 };
 
 export const downloadQRCode = async (id: number, token: string): Promise<Blob> => {
-  const response = await fetchWithAuth<Blob>(`/qrcodes/${id}/download`, {
-    method: 'GET',
-    headers: {
-      'Accept': 'image/png',
-    },
-  }, token);
+  try {
+    const response = await fetchWithAuth<Blob>(`/qrcodes/${id}/download`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'image/png',
+      },
+      responseType: 'blob', // This is the key!
+    }, token);
 
-  if (!response.data) {
-    throw new Error('Failed to download QR code');
+    if (!response.data) {
+      throw new Error('No data received from server');
+    }
+
+    return response.data;
+  } catch (error: any) {
+    console.error('Download QR code error:', error);
+    
+    // Enhance error message with more context
+    if (error.status === 404) {
+      throw new Error('QR code not found on server');
+    } else if (error.status === 401) {
+      throw new Error('Authentication required. Please login again.');
+    } else if (error.message) {
+      throw new Error(`Download failed: ${error.message}`);
+    } else {
+      throw new Error('Failed to download QR code. Please try again.');
+    }
   }
-
-  return response.data;
 };
 
 export const validateQRCode = async (
