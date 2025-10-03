@@ -53,7 +53,6 @@ export const fetchShifts = async (
     if (!response.data) {
       throw new Error('Failed to fetch shifts');
     }
-
     return response.data || [];
   } catch (error) {
     console.error('Error fetching shifts:', error);
@@ -131,7 +130,8 @@ export const createShift = async (
     end_time: shiftData.end_time,
     shift_type: shiftData.shift_type || 'regular',
     employee_ids: shiftData.employee_ids,
-    notes: shiftData.notes
+    notes: shiftData.notes,
+    status: shiftData.status
   };
 
   const response = await fetchWithAuth<ShiftWithEmployees>(

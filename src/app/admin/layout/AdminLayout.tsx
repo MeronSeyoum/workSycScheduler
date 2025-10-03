@@ -206,7 +206,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             'bg-white text-slate-900 shadow-lg h-screen fixed top-0 left-0 z-50 transition-all duration-300 ease-in-out flex flex-col',
             // Desktop behavior
             'lg:relative lg:z-30 lg:translate-x-0',
-            sidebarCollapsed ? 'lg:w-16' : 'lg:w-64',
+            sidebarCollapsed ? 'lg:w-16' : 'lg:w-60',
             // Mobile behavior
             mobileMenuOpen ? 'translate-x-0 w-80' : '-translate-x-full w-80'
           )}

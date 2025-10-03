@@ -11,13 +11,13 @@ import {
   Eye,
   EyeOff,
   Clock,
+  Sun,
+  Moon,
   CheckCircle,
   Shield,
   Users,
   BarChart3,
   Calendar,
-  TrendingUp,
-  DollarSign,
 } from "lucide-react";
 
 // Validation schema
@@ -35,66 +35,41 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-// Feature data
+// Simplified features with shorter descriptions
 const features = [
   {
-    icon: <Users className="w-5 h-5 lg:w-6 lg:h-6 text-teal-300" />,
-    title: "Complete Employee Management",
-    description:
-      "Manage profiles, roles, permissions, and schedules in one centralized dashboard. Track performance metrics and maintain detailed employee records with advanced filtering and search capabilities.",
-    tags: ["Role-based access", "Performance analytics", "Document management"],
+    icon: <Users className="w-5 h-5 text-teal-300" />,
+    title: "Employee Management",
+    description: "Centralized profiles, roles, and permissions with advanced analytics.",
+    tags: ["Role-based access", "Performance analytics"],
     color: "teal",
   },
   {
-    icon: <Shield className="w-5 h-5 lg:w-6 lg:h-6 text-cyan-300" />,
-    title: "Enterprise-Grade Security",
-    description:
-      "Multi-layered security with end-to-end encryption, two-factor authentication, and role-based access controls. SOC 2 compliant with regular security audits and real-time threat detection.",
-    tags: [
-      "2FA & MFA",
-      "End-to-end encryption",
-      "GDPR compliant",
-      "Audit logs",
-    ],
+    icon: <Shield className="w-5 h-5 text-cyan-300" />,
+    title: "Enterprise Security",
+    description: "Multi-factor auth, encryption, and SOC 2 compliance built-in.",
+    tags: ["2FA & MFA", "End-to-end encryption"],
     color: "cyan",
   },
   {
-    icon: <CheckCircle className="w-5 h-5 lg:w-6 lg:h-6 text-green-300" />,
-    title: "Real-time Workforce Tracking",
-    description:
-      "Live monitoring of attendance, location, and productivity with GPS verification and QR code check-ins. Receive instant notifications and generate comprehensive reports for payroll and compliance.",
-    tags: [
-      "GPS geofencing",
-      "QR attendance",
-      "Live dashboard",
-      "Automated reports",
-    ],
+    icon: <CheckCircle className="w-5 h-5 text-green-300" />,
+    title: "Real-time Tracking",
+    description: "Live attendance monitoring with GPS and QR code verification.",
+    tags: ["GPS geofencing", "QR attendance"],
     color: "green",
   },
   {
-    icon: <BarChart3 className="w-5 h-5 lg:w-6 lg:h-6 text-blue-300" />,
-    title: "Advanced Analytics & Reporting",
-    description:
-      "Comprehensive business intelligence with customizable dashboards, trend analysis, and predictive insights. Export data in multiple formats and integrate with your existing business tools.",
-    tags: [
-      "Custom reports",
-      "Data export",
-      "API integration",
-      "Trend analysis",
-    ],
+    icon: <BarChart3 className="w-5 h-5 text-blue-300" />,
+    title: "Advanced Analytics",
+    description: "Custom dashboards, reports, and predictive business insights.",
+    tags: ["Custom reports", "Data export"],
     color: "blue",
   },
   {
-    icon: <Calendar className="w-5 h-5 lg:w-6 lg:h-6 text-purple-300" />,
-    title: "Smart Scheduling & Automation",
-    description:
-      "Intelligent shift planning with conflict detection, availability tracking, and automated shift assignments. Reduce scheduling time by 75% with AI-powered recommendations and pattern recognition.",
-    tags: [
-      "Auto-scheduling",
-      "Conflict detection",
-      "Shift swapping",
-      "Mobile access",
-    ],
+    icon: <Calendar className="w-5 h-5 text-purple-300" />,
+    title: "Smart Scheduling",
+    description: "AI-powered shift planning with conflict detection and automation.",
+    tags: ["Auto-scheduling", "Conflict detection"],
     color: "purple",
   },
 ];
@@ -103,41 +78,59 @@ const features = [
 const FeatureIcon = ({
   icon,
   color,
+  isDark,
 }: {
   icon: React.ReactNode;
   color: string;
+  isDark: boolean;
 }) => (
   <div
-    className={`w-10 h-10 lg:w-12 lg:h-12 bg-${color}-500/20 backdrop-blur-xl rounded-lg lg:rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}
+    className={`w-10 h-10 ${
+      isDark 
+        ? `bg-${color}-500/20 backdrop-blur-xl` 
+        : 'bg-white/80 backdrop-blur-sm'
+    } rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}
   >
     {icon}
   </div>
 );
 
-const FeatureTag = ({ tag, color }: { tag: string; color: string }) => (
+const FeatureTag = ({ tag, color, isDark }: { tag: string; color: string; isDark: boolean }) => (
   <span
-    className={`inline-block bg-${color}-500/20 text-${color}-300 text-[10px] lg:text-xs px-2 py-1 rounded-full`}
+    className={`inline-block ${
+      isDark 
+        ? `bg-${color}-500/20 text-${color}-300` 
+        : `bg-${color}-100 text-${color}-700`
+    } text-[10px] px-2 py-1 rounded-full`}
   >
     {tag}
   </span>
 );
 
 // Feature Card Component
-const FeatureCard = ({ feature }: { feature: (typeof features)[0] }) => (
+const FeatureCard = ({ feature, isDark }: { feature: (typeof features)[0]; isDark: boolean }) => (
   <div
-    className={`flex items-start gap-4 p-4 lg:p-6 bg-white/5 backdrop-blur-xl rounded-xl lg:rounded-2xl border border-white/10 hover:border-${feature.color}-400/30 transition-all duration-300 group`}
+    className={`flex items-start gap-4 p-4 ${
+      isDark 
+        ? `bg-white/5 backdrop-blur-xl border-white/10 hover:border-${feature.color}-400/30` 
+        : 'bg-white/60 backdrop-blur-sm border-gray-200 hover:border-teal-500/40'
+    } backdrop-blur-xl rounded-xl border transition-all duration-300 group`}
   >
-    <FeatureIcon icon={feature.icon} color={feature.color} />
+    <FeatureIcon icon={feature.icon} color={feature.color} isDark={isDark} />
     <div className="flex-1 min-w-0">
-      <h3 className="text-white font-semibold text-sm lg:text-base mb-1 lg:mb-2">
+      <h3 className={`${
+        isDark ? 'text-white' : 'text-gray-900'
+      } font-semibold text-sm mb-1`}>
         {feature.title}
       </h3>
-      <p className="text-white/70 text-xs lg:text-sm leading-relaxed">
+      <p className={`${
+        isDark ? 'text-white/70' : 'text-gray-600'
+      } text-xs leading-relaxed`}>
         {feature.description}
       </p>
       <div className="mt-2 flex flex-wrap gap-1">
         {feature.tags.map((tag, index) => (
-          <FeatureTag key={index} tag={tag} color={feature.color} />
+          <FeatureTag key={index} tag={tag} color={feature.color} isDark={isDark} />
         ))}
       </div>
     </div>
@@ -145,6 +138,10 @@ const FeatureCard = ({ feature }: { feature: (typeof features)[0] }) => (
 );
 
 export default function LoginPage() {
+
+  const [isDark, setIsDark] = useState(false);
+
+ 
   const { signIn, isLoading: authLoading, error: authError } = useAuth();
   const [apiError, setApiError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -185,129 +182,156 @@ export default function LoginPage() {
     }
   };
 
+  useEffect(() => {
+    const saved = localStorage.getItem('loginTheme');
+    if (saved) {
+      setIsDark(saved === 'dark');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = !isDark;
+    setIsDark(newTheme);
+    localStorage.setItem('loginTheme', newTheme ? 'dark' : 'light');
+  };
+
+
+
+  const themeClasses = {
+    background: isDark 
+      ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900' 
+      : 'bg-gradient-to-br from-gray-50 via-blue-50 to-teal-50',
+    text: isDark ? 'text-white' : 'text-gray-900',
+    textSecondary: isDark ? 'text-white/80' : 'text-gray-700',
+    textMuted: isDark ? 'text-white/60' : 'text-gray-500',
+    card: isDark ? 'bg-white/10' : 'bg-white',
+    cardBorder: isDark ? 'border-white/20' : 'border-gray-200',
+    input: isDark ? 'bg-white/5 border-white/20 text-white placeholder-white/50' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400',
+    inputFocus: isDark ? 'focus:border-teal-400/50 focus:ring-teal-400/20' : 'focus:border-teal-500 focus:ring-teal-500/20',
+    button: isDark ? 'bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700' : 'bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800',
+    featureCard: isDark ? 'bg-white/5 border-white/10 hover:border-teal-400/30' : 'bg-white/60 border-gray-200 hover:border-teal-500/40',
+    link: isDark ? 'text-teal-300 hover:text-teal-200' : 'text-teal-600 hover:text-teal-700',
+    glow: isDark ? 'from-teal-400/10 to-cyan-400/5' : 'from-teal-200/30 to-cyan-200/20',
+    error: isDark ? 'text-red-300' : 'text-red-500',
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900 relative overflow-hidden">
+    <div className={`min-h-screen ${themeClasses.background} relative overflow-hidden transition-colors duration-300`}>
       {/* Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 -right-20 w-80 h-80 lg:w-96 lg:h-96 rounded-full bg-gradient-to-br from-teal-400/10 via-cyan-300/8 to-blue-400/5 backdrop-blur-2xl"></div>
-        <div className="absolute bottom-1/4 -left-20 w-72 h-72 lg:w-80 lg:h-80 bg-gradient-to-tr from-teal-300/15 via-emerald-200/8 to-cyan-300/10 backdrop-blur-2xl rounded-full"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-blue-200/8 via-teal-200/10 to-cyan-200/6 backdrop-blur-2xl rounded-3xl rotate-45"></div>
+        <div className={`absolute top-20 -right-32 w-96 h-96 rounded-full bg-gradient-to-br ${themeClasses.glow} backdrop-blur-3xl`}></div>
+        <div className={`absolute bottom-20 -left-32 w-80 h-80 bg-gradient-to-tr ${themeClasses.glow} backdrop-blur-3xl rounded-full`}></div>
       </div>
 
-      <div className="relative z-10 min-h-screen flex max-w-7xl mx-auto gap-40 ">
-        {/* Left Panel - Features */}
-        <div className="hidden lg:flex lg:w-1/2 items-center justify-center gap-4 py-8 sm:py-12 lg:py-12">
-          <div className="w-full max-w-2xl">
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg">
+      {/* Theme Toggle - Top Right */}
+      <button
+        onClick={toggleTheme}
+        className={`fixed top-6 right-6 z-50 p-3 rounded-xl ${themeClasses.card} border ${themeClasses.cardBorder} backdrop-blur-xl transition-all duration-300 hover:scale-105`}
+        aria-label="Toggle theme"
+      >
+        {isDark ? <Sun className="w-5 h-5 text-teal-300" /> : <Moon className="w-5 h-5 text-teal-600" />}
+      </button>
+
+      <div className="relative z-10 min-h-screen flex flex-col lg:flex-row max-w-7xl mx-auto">
+        {/* Left Panel - Branding & Features */}
+        <div className="w-full lg:w-1/2 flex flex-col justify-center p-6 lg:p-12">
+          {/* Logo & Branding */}
+          <div className="mb-8 lg:mb-12">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg">
                 <Clock className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white">WorkSync</h1>
-                <p className="text-teal-200 text-sm">Admin Dashboard</p>
+                <h1 className={`text-2xl lg:text-3xl font-bold ${themeClasses.text}`}>WorkSync</h1>
+                <p className={`text-sm ${themeClasses.textMuted}`}>Admin Dashboard</p>
               </div>
             </div>
+            <p className={`${themeClasses.textSecondary} text-lg max-w-md`}>
+              Streamline workforce management with powerful tools designed for modern businesses.
+            </p>
+          </div>
 
-            <div className="mb-6">
-              <p className="text-white/80 text-sm leading-relaxed">
-                Access your workforce management dashboard and streamline your
-                business operations.
-              </p>
-            </div>
-
-            {/* Features Grid */}
-            <div className="space-y-4 max-h-auto pr-2">
-              {features.map((feature, index) => (
-                <FeatureCard key={index} feature={feature} />
-              ))}
-            </div>
+          {/* Features List - Hidden on mobile */}
+          <div className="hidden lg:block space-y-3 max-w-lg">
+            {features.map((feature, index) => (
+              <FeatureCard key={index} feature={feature} isDark={isDark} />
+            ))}
           </div>
         </div>
 
         {/* Right Panel - Login Form */}
-        <div className="w-full lg:w-3/8  flex-col items-center justify-center p-4 lg:p-10  ">
-          <div className="hidden lg:flex items-center gap-3 mb-4 lg:pt-16">
-            <h2 className="text-3xl font-bold text-white mb-4">Welcome Back</h2>
-          </div>
-          <div className="w-full max-w-lg">
-            {/* Mobile Header */}
-            <div className="lg:hidden flex items-center justify-center gap-3  my-8">
-              <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
+          <div className="w-full max-w-md lg:pt-26">
+            {/* Mobile Logo */}
+            <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
+              <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center">
                 <Clock className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-white">WorkSync</span>
+              <span className={`text-xl font-bold ${themeClasses.text}`}>WorkSync</span>
             </div>
 
-            {/* Login Form */}
-            <form
-              onSubmit={handleSubmit(onSubmit)}
-              className="bg-white/10 backdrop-blur-2xl rounded-2xl p-6 border border-white/20 shadow-xl"
-            >
+            {/* Login Card */}
+            <div className={`${themeClasses.card} backdrop-blur-2xl rounded-2xl p-6 lg:p-8  border ${themeClasses.cardBorder} shadow-2xl`}>
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-white mb-2">Sign In</h2>
-                <p className="text-white/70 text-sm">
-                  Enter your credentials to access your dashboard
+                <h2 className={`text-2xl lg:text-3xl font-bold ${themeClasses.text} mb-2`}>Welcome Back</h2>
+                <p className={`${themeClasses.textMuted} text-sm`}>
+                  Sign in to access your dashboard
                 </p>
               </div>
 
-              <div className="space-y-4">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 {/* Email Field */}
                 <div>
-                  <label className="block text-white/90 text-sm font-medium mb-2">
+                  <label className={`block ${themeClasses.textSecondary} text-sm font-medium mb-2`}>
                     Email Address
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Mail className="h-4 w-4 text-white/50" />
+                      <Mail className={`h-5 w-5 ${themeClasses.textMuted}`} />
                     </div>
                     <input
                       {...register("email")}
                       type="email"
-                      placeholder="your@email.com"
-                      className="w-full pl-10 pr-4 py-3 bg-white/5 backdrop-blur-xl border border-white/20 rounded-xl text-white placeholder-white/50 focus:border-teal-400/50 focus:ring-2 focus:ring-teal-400/20 focus:outline-none transition-all duration-200 text-sm"
+                      placeholder="you@company.com"
+                      className={`w-full pl-10 pr-4 py-3 ${themeClasses.input} backdrop-blur-xl border rounded-xl ${themeClasses.inputFocus} focus:ring-2 focus:outline-none transition-all duration-200`}
                       disabled={isSubmitting || authLoading}
                     />
                   </div>
                   {errors.email && (
-                    <p className="mt-1 text-xs text-red-300">
-                      {errors.email.message}
-                    </p>
+                    <p className={`mt-1.5 text-xs ${themeClasses.error}`}>{errors.email.message}</p>
                   )}
                 </div>
 
                 {/* Password Field */}
                 <div>
-                  <label className="block text-white/90 text-sm font-medium mb-2">
+                  <label className={`block ${themeClasses.textSecondary} text-sm font-medium mb-2`}>
                     Password
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Lock className="h-4 w-4 text-white/50" />
+                      <Lock className={`h-5 w-5 ${themeClasses.textMuted}`} />
                     </div>
                     <input
                       {...register("password")}
                       type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
-                      className="w-full pl-10 pr-10 py-3 bg-white/5 backdrop-blur-xl border border-white/20 rounded-xl text-white placeholder-white/50 focus:border-teal-400/50 focus:ring-2 focus:ring-teal-400/20 focus:outline-none transition-all duration-200 text-sm"
+                      className={`w-full pl-10 pr-12 py-3 ${themeClasses.input} backdrop-blur-xl border rounded-xl ${themeClasses.inputFocus} focus:ring-2 focus:outline-none transition-all duration-200`}
                       disabled={isSubmitting || authLoading}
                     />
                     <button
                       type="button"
                       className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                      onClick={() => setShowPassword((s) => !s)}
+                      onClick={() => setShowPassword(!showPassword)}
                     >
                       {showPassword ? (
-                        <EyeOff className="h-4 w-4 text-white/50 hover:text-white/70 transition-colors" />
+                        <EyeOff className={`h-5 w-5 ${themeClasses.textMuted} hover:opacity-70 transition-opacity`} />
                       ) : (
-                        <Eye className="h-4 w-4 text-white/50 hover:text-white/70 transition-colors" />
+                        <Eye className={`h-5 w-5 ${themeClasses.textMuted} hover:opacity-70 transition-opacity`} />
                       )}
                     </button>
                   </div>
                   {errors.password && (
-                    <p className="mt-1 text-xs text-red-300">
-                      {errors.password.message}
-                    </p>
+                    <p className={`mt-1.5 text-xs ${themeClasses.error}`}>{errors.password.message}</p>
                   )}
                 </div>
 
@@ -318,27 +342,23 @@ export default function LoginPage() {
                       {...register("rememberMe")}
                       id="rememberMe"
                       type="checkbox"
-                      className="h-4 w-4 text-teal-500 bg-white/10 border-white/30 rounded focus:ring-teal-400/20 focus:ring-2"
+                      className={`h-4 w-4 text-teal-600 ${
+                        isDark ? 'bg-white/10 border-white/30' : 'bg-transparent border-gray-300'
+                      } rounded focus:ring-teal-500`}
                       disabled={isSubmitting || authLoading}
                     />
-                    <label
-                      htmlFor="rememberMe"
-                      className="ml-2 text-sm text-white/80"
-                    >
+                    <label htmlFor="rememberMe" className={`ml-2 text-sm ${themeClasses.textSecondary}`}>
                       Remember me
                     </label>
                   </div>
-                  <a
-                    href="/forgot-password"
-                    className="text-sm text-teal-300 hover:text-teal-200 transition-colors"
-                  >
+                  <a href="/forgot-password" className={`text-sm ${themeClasses.link} transition-colors`}>
                     Forgot password?
                   </a>
                 </div>
 
                 {/* Error Message */}
                 {apiError && (
-                  <p className="text-center text-sm text-red-300 py-2">
+                  <p className={`text-center text-sm ${themeClasses.error} py-2`}>
                     {apiError}
                   </p>
                 )}
@@ -347,46 +367,40 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting || authLoading || !isValid}
-                  className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 flex items-center justify-center gap-2 text-sm"
+                  className={`w-full ${themeClasses.button} disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 flex items-center justify-center gap-2`}
                 >
                   {isSubmitting || authLoading ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                       Signing in...
                     </>
                   ) : (
                     "Sign In"
                   )}
                 </button>
-              </div>
+              </form>
 
               {/* Sign Up Link */}
               <div className="mt-6 text-center">
-                <p className="text-white/70 text-sm">
-                  Don&apos;t have an account?{" "}
-                  <a
-                    href="/register"
-                    className="text-teal-300 hover:text-teal-200 font-semibold transition-colors"
-                  >
+                <p className={`${themeClasses.textMuted} text-sm`}>
+                  Don&apot;t have an account?{" "}
+                  <a href="/register" className={`${themeClasses.link} font-semibold transition-colors`}>
                     Create one
                   </a>
                 </p>
               </div>
-            </form>
+            </div>
 
             {/* Security Note */}
-            <div className="mt-4 text-center">
-              <p className="text-white/50 text-xs">
-                🔒 Your data is protected with enterprise-grade security
-              </p>
-            </div>
+            <p className={`mt-4 text-center ${themeClasses.textMuted} text-xs`}>
+              🔒 Protected with enterprise-grade security
+            </p>
           </div>
         </div>
       </div>
     </div>
   );
 }
-
 // 'use client';
 
 // import { useForm } from 'react-hook-form';

@@ -3,7 +3,7 @@
 import { Client } from "./client";
 
 export type ShiftType = 'regular' | 'emergency';
-export type ShiftStatus = 'scheduled' | 'completed' | 'missed';
+export type ShiftStatus ='scheduled' | 'completed' | 'missed'| 'in_progress'| 'cancelled'| 'draft' ;
 
 interface Timestamps {
   created_at?: string;
@@ -44,6 +44,7 @@ export interface CreateShiftWithEmployeesDto {
   shift_type?: ShiftType;
   employee_ids: number[];
   notes?: string;
+  status?:string;
 }
 
 export interface UpdateShiftDto {

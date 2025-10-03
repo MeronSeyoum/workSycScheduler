@@ -260,7 +260,7 @@ const calculateStats = (
  * - AI-powered optimization
  *
  * - handleCopyWeek
- * -handlePasteWeek
+ * - handlePasteWeek
  * - handleSaveAsTemplate
  * - handleApplyTemplate
  * - handleDeleteTemplate
@@ -569,6 +569,7 @@ export const SchedulerPage: React.FC = () => {
             employee_ids: [employeeId],
             shift_type: shift.shift_type || "regular",
             notes: shift.notes,
+            status: shift.status ,
           };
 
           await apiCall.shifts.createShift(createShiftDto, token);
@@ -1047,7 +1048,7 @@ export const SchedulerPage: React.FC = () => {
             employee_ids: [employee.id],
             shift_type: "regular",
             notes: shiftData.note,
-            // status: shiftData.publish ? 'scheduled' : 'draft' as ShiftStatus,
+            status: shiftData.publish ? 'scheduled' : 'draft' as ShiftStatus,
           };
 
           const response = await apiCall.shifts.createShift(
@@ -1107,7 +1108,7 @@ export const SchedulerPage: React.FC = () => {
             employee_ids: [employee.id],
             shift_type: "regular",
             notes: shiftData.note,
-            // status: shiftData.publish ? 'scheduled' : 'draft' as ShiftStatus,
+            status: shiftData.publish ? 'scheduled' : 'draft' as ShiftStatus,
           };
 
           const response = await apiCall.shifts.createShift(

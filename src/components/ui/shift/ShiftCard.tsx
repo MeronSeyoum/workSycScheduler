@@ -23,17 +23,18 @@ const roleColorClasses: Record<string, { border: string; bg: string }> = {
     bg: "bg-blue-50"
   },
   "Window Cleaner": {
-    border: "border-purple-500",
-    bg: "bg-purple-50"
+    border: "border-yellow-500",
+    bg: "bg-yellow-50"
   },
   Janitor: {
     border: "border-green-500",
     bg: "bg-green-50"
   },
   Manager: {
-    border: "border-orange-500",
-    bg: "bg-orange-50"
+    border: "border-red-500",
+    bg: "bg-red-50"
   },
+  
   Default: {
     border: "border-gray-500",
     bg: "bg-gray-50"
@@ -183,6 +184,33 @@ export const ShiftCard: React.FC<ShiftCardProps> = ({
 
   const clientName = shift.client?.business_name || "Unknown Client";
 
+  // Check if shift is in draft or not scheduled status
+  const isDraft = shift.status === "draft" ;
+
+  // Style calculations using Tailwind classes
+  const getCardStyles = () => {
+    // For draft/not scheduled shifts, use dashed border with role color
+    // For other shifts, use solid border with role color
+    const borderStyle = isDraft 
+      ? `border-dashed ${roleColor.border}` 
+      : roleColor.border;
+
+    const baseClasses = `group p-2 shadow-sm transition-all duration-200 border-l-4 rounded-sm relative cursor-grab active:cursor-grabbing transform hover:shadow-md ${roleColor.bg} ${borderStyle}`;
+
+    if (isDragging) {
+      return `${baseClasses} opacity-50 scale-105 shadow-lg z-10`;
+    }
+    if (isOver && canDrop) {
+      return `${baseClasses} border-2 border-teal-300 bg-teal-50 shadow-md scale-105`;
+    }
+    if (isOver && !canDrop) {
+      return `${baseClasses} border-2 border-red-300 bg-red-50`;
+    }
+    return hasEmployees 
+      ? `${baseClasses} border-gray-100 hover:border-gray-200`
+      : `${baseClasses} border-gray-200 hover:border-gray-300`;
+  };
+
   // Dropdown menu items
   const dropdownItems: MenuProps["items"] = [
     {
@@ -212,24 +240,6 @@ export const ShiftCard: React.FC<ShiftCardProps> = ({
     },
   ];
 
-  // Style calculations using Tailwind classes
-  const getCardStyles = () => {
-    const baseClasses = `group p-2 shadow-sm transition-all duration-200 border-l-4 rounded-sm relative cursor-grab active:cursor-grabbing transform hover:shadow-md ${roleColor.bg} ${roleColor.border}`;
-
-    if (isDragging) {
-      return `${baseClasses} opacity-50 scale-105 shadow-lg z-10`;
-    }
-    if (isOver && canDrop) {
-      return `${baseClasses} border-2 border-teal-300 bg-teal-50 shadow-md scale-105`;
-    }
-    if (isOver && !canDrop) {
-      return `${baseClasses} border-2 border-red-300 bg-red-50`;
-    }
-    return hasEmployees 
-      ? `${baseClasses} border-gray-100 hover:border-gray-200`
-      : `${baseClasses} border-dashed border-gray-200 hover:border-gray-300`;
-  };
-
   return (
     <>
       <div
@@ -239,8 +249,8 @@ export const ShiftCard: React.FC<ShiftCardProps> = ({
         data-tooltip-html={`
           <div class="bg-white max-w-xs">
             <div class="font-semibold text-gray-800 mb-1">${employeeName}</div>
-            ${shift.status === "draft"
-              ? '<div class="text-xs text-yellow-600 font-medium mb-1 px-2 py-1 bg-yellow-100 rounded-full inline-block">DRAFT</div>'
+            ${isDraft
+              ? `<div class="text-xs text-yellow-600 font-medium mb-1 px-2 py-1 bg-yellow-100 rounded-full inline-block">${shift.status?.toUpperCase()}</div>`
               : ""
             }
             <div class="text-sm text-gray-600 mb-2">${positionName}</div>
@@ -253,7 +263,7 @@ export const ShiftCard: React.FC<ShiftCardProps> = ({
         `}
         data-testid={`shift-card-${shift.id}`}
       >
-        {shift.status === "draft" && (
+        {isDraft && (
           <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-500 rounded-full border-2 border-white shadow-sm" />
         )}
 
