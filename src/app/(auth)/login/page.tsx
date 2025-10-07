@@ -49,7 +49,7 @@ const features = [
     title: "Enterprise Security",
     description: "Multi-factor auth, encryption, and SOC 2 compliance built-in.",
     tags: ["2FA & MFA", "End-to-end encryption"],
-    color: "cyan",
+    color: "orange",
   },
   {
     icon: <CheckCircle className="w-5 h-5 text-green-300" />,
@@ -101,7 +101,7 @@ const FeatureTag = ({ tag, color, isDark }: { tag: string; color: string; isDark
       isDark 
         ? `bg-${color}-500/20 text-${color}-300` 
         : `bg-${color}-100 text-${color}-700`
-    } text-[10px] px-2 py-1 rounded-full`}
+    } text-[12px] px-2 py-1 rounded-full`}
   >
     {tag}
   </span>
@@ -120,12 +120,12 @@ const FeatureCard = ({ feature, isDark }: { feature: (typeof features)[0]; isDar
     <div className="flex-1 min-w-0">
       <h3 className={`${
         isDark ? 'text-white' : 'text-gray-900'
-      } font-semibold text-sm mb-1`}>
+      } font-semibold text-base mb-1`}>
         {feature.title}
       </h3>
       <p className={`${
         isDark ? 'text-white/70' : 'text-gray-600'
-      } text-xs leading-relaxed`}>
+      } text-sm leading-relaxed`}>
         {feature.description}
       </p>
       <div className="mt-2 flex flex-wrap gap-1">

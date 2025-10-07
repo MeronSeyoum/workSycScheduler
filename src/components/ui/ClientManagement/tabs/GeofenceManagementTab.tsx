@@ -4,11 +4,11 @@ import { Card, Button, Space, Segmented, Table, Row, Col } from 'antd';
 import { PlusOutlined, AppstoreOutlined, BarsOutlined } from '@ant-design/icons';
 import { Geofence } from '@/lib/types/geofence';
 import { Client } from '@/lib/types/client';
-import { GeofenceForm } from '../forms/GeofenceForm';
 import { GeofenceModal } from '../modals/GeofenceModal';
 import { GeofenceCard } from '../cards/GeofenceCard';
 import { geofenceTableColumns } from '../columns/geofenceColumns';
 import { VIEW_MODES } from '@/lib/constants/clientDashboard';
+import { GeofenceForm } from '../forms/GeofenceForm';
 
 interface GeofenceManagementTabProps {
   geofences: Geofence[];
@@ -43,8 +43,8 @@ export const GeofenceManagementTab: React.FC<GeofenceManagementTabProps> = ({
         latitude: parseFloat(values.latitude.toString()),
         longitude: parseFloat(values.longitude.toString()),
         radius_meters: parseInt(values.radius_meters.toString()),
-        accuracy: values.accuracy || 95,
-        status: values.status || 'active',
+        // accuracy: values.accuracy || 95,
+        // status: values.status || 'active',
       };
 
       if (isUpdate) {

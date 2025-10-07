@@ -84,14 +84,15 @@ export const GeofenceForm: React.FC<ModernGeofenceFormProps> = ({
     setCurrentStep(currentStep - 1);
   };
 
-  const handleFinish = (values: any) => {
+  const handleFinish = () => {
+     const values = form.getFieldsValue(true); 
     const submitData = {
       client_id: values.client_id,
       latitude: parseFloat(values.latitude?.toString() || '0'),
       longitude: parseFloat(values.longitude?.toString() || '0'),
       radius_meters: parseInt(values.radius_meters?.toString() || '500'),
-      accuracy: values.accuracy || 95,
-      status: values.status || 'active',
+      // accuracy: values.accuracy || 95,
+      // status: values.status || 'active',
     };
     
     if (initialValues?.id) {
@@ -375,7 +376,7 @@ export const GeofenceForm: React.FC<ModernGeofenceFormProps> = ({
         );
 
       case 3:
-        const values = form.getFieldsValue();
+        const values = form.getFieldsValue(true); 
         return (
           <div className="space-y-6">
             <div className="text-center">
