@@ -20,6 +20,8 @@ export const clientTableColumns = (
     title: 'Business Info',
     dataIndex: 'business_name',
     key: 'business_name',
+    width: '30%',
+
     render: (text: string, record: Client) => (
       <Space>
         <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#0F6973' }} />
@@ -34,6 +36,8 @@ export const clientTableColumns = (
     title: 'Contact',
     dataIndex: 'email',
     key: 'email',
+    width: '20%',
+
     render: (email: string, record: Client) => (
       <div>
         <div className="flex items-center gap-1">
@@ -51,10 +55,12 @@ export const clientTableColumns = (
     title: 'Location',
     dataIndex: 'location_address',
     key: 'location',
+    width: '30%',
+
     render: (address: LocationAddress) => (
       <div className="flex items-center gap-1">
         <EnvironmentOutlined className="text-gray-400" />
-        <span>{address ? `${address.city}, ${address.state}` : 'N/A'}</span>
+        <span>{address ?`${address.street} ${address.city}, ${address.state} ${address.postal_code}` : 'N/A'}</span>
       </div>
     ),
   },
@@ -62,6 +68,8 @@ export const clientTableColumns = (
     title: 'Status',
     dataIndex: 'status',
     key: 'status',
+    width: '15%',
+
     render: (status: 'active' | 'inactive' | 'on_hold') => (
       <Tag color={CLIENT_STATUS_COLOR_MAP[status]} className="capitalize">
         {status}
@@ -71,8 +79,10 @@ export const clientTableColumns = (
   {
     title: 'Actions',
     key: 'actions',
+    width: '5%',
+
     render: (_, record: Client) => (
-      <Space>
+      <Space className='justify-end '>
         <Tooltip title="Edit Client">
           <Button icon={<EditOutlined />} size="small" onClick={() => onEdit(record)} />
         </Tooltip>

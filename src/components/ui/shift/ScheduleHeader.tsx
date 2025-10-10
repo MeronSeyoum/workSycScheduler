@@ -20,7 +20,7 @@ import {
   Printer as PrinterIcon
 } from "lucide-react";
 import { MdPublish } from "react-icons/md";
-import { Dayjs } from "dayjs";
+import { Dayjs, } from "dayjs";
 import dayjs from "dayjs";
 import { ScheduleTemplate, WeekScheduleData } from "@/lib/types/schedule";
 
@@ -577,7 +577,7 @@ export const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
           >
             {clients.map((client) => (
               <Option key={client.id} value={client.id.toString()}>
-                {client.business_name}
+                { client.business_name}
               </Option>
             ))}
           </Select>

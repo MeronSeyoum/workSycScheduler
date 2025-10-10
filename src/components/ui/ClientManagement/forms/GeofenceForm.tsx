@@ -1,9 +1,10 @@
 // components/Dashboard/forms/ModernGeofenceForm.tsx
-import React, { useState, useEffect } from 'react';
-import { Form, Select, Steps, Button, Card, Avatar, InputNumber, Row, Col, Slider, Segmented, Descriptions, Tag, Statistic } from 'antd';
+import React, { useState, useEffect, useRef } from 'react';
+import { Form, Select, Steps, Button, Card, Avatar, InputNumber, Row, Col, Slider, Segmented, Descriptions, Tag, Statistic, Modal, Spin } from 'antd';
 import { UserOutlined, EnvironmentOutlined, RadarChartOutlined, CheckCircleOutlined, EditOutlined, AimOutlined, SaveOutlined, GlobalOutlined } from '@ant-design/icons';
 import { Geofence } from '@/lib/types/geofence';
 import { Client } from '@/lib/types/client';
+import { AdvancedMapPicker } from '../modals/AdvancedMapPicker';
 
 const { Option } = Select;
 
@@ -12,6 +13,11 @@ interface ModernGeofenceFormProps {
   onSubmit: (values: any) => void;
   loading: boolean;
   clients: Client[];
+}
+
+interface MapCoordinates {
+  latitude: number;
+  longitude: number;
 }
 
 export const GeofenceForm: React.FC<ModernGeofenceFormProps> = ({
@@ -24,6 +30,10 @@ export const GeofenceForm: React.FC<ModernGeofenceFormProps> = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [locationMethod, setLocationMethod] = useState("manual");
+  const [mapModalVisible, setMapModalVisible] = useState(false);
+  const [mapLoading, setMapLoading] = useState(false);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const markerRef = useRef<google.maps.Marker | null>(null);
 
   const steps = [
     {
@@ -50,7 +60,11 @@ export const GeofenceForm: React.FC<ModernGeofenceFormProps> = ({
 
   useEffect(() => {
     if (initialValues) {
-      form.setFieldsValue(initialValues);
+      // Important: When editing, preserve the original client_id
+      form.setFieldsValue({
+        ...initialValues,
+        client_id: initialValues.client_id,
+      });
       setSelectedClient(
         clients.find((c) => c.id === initialValues.client_id) || null
       );
@@ -61,6 +75,14 @@ export const GeofenceForm: React.FC<ModernGeofenceFormProps> = ({
       setSelectedClient(null);
     }
   }, [initialValues, clients, form]);
+
+  const handleAdvancedMapConfirm = (latitude: number, longitude: number) => {
+    form.setFieldsValue({
+      latitude: parseFloat(latitude.toFixed(6)),
+      longitude: parseFloat(longitude.toFixed(6)),
+    });
+    setMapModalVisible(false);
+  };
 
   const handleNext = async () => {
     try {
@@ -84,23 +106,34 @@ export const GeofenceForm: React.FC<ModernGeofenceFormProps> = ({
     setCurrentStep(currentStep - 1);
   };
 
-  const handleFinish = () => {
-     const values = form.getFieldsValue(true); 
-    const submitData = {
-      client_id: values.client_id,
-      latitude: parseFloat(values.latitude?.toString() || '0'),
-      longitude: parseFloat(values.longitude?.toString() || '0'),
-      radius_meters: parseInt(values.radius_meters?.toString() || '500'),
-      // accuracy: values.accuracy || 95,
-      // status: values.status || 'active',
-    };
-    
-    if (initialValues?.id) {
-      submitData.client_id = initialValues.id;
-    }
-    
-    onSubmit(submitData);
+// components/Dashboard/forms/ModernGeofenceForm.tsx
+// Update the handleFinish function:
+
+const handleFinish = () => {
+  const values = form.getFieldsValue(true);
+  
+  // Create base submit data without id for new geofences
+  const submitData = {
+    client_id: values.client_id,
+    latitude: parseFloat(values.latitude?.toString() || '0'),
+    longitude: parseFloat(values.longitude?.toString() || '0'),
+    radius_meters: parseInt(values.radius_meters?.toString() || '500'),
   };
+
+  // For updates, include the ID in the submission data
+  if (initialValues?.id) {
+    // Create update data that includes the ID
+    const updateData: Geofence = {
+      ...initialValues, // Keep original properties
+      ...submitData,    // Override with form values
+      id: initialValues.id, // Ensure ID is preserved
+    };
+    onSubmit(updateData);
+  } else {
+    // For creates, just submit the form data
+    onSubmit(submitData);
+  }
+};
 
   const handleClientSelect = (clientId: number) => {
     const client = clients.find((c) => c.id === clientId);
@@ -128,12 +161,6 @@ export const GeofenceForm: React.FC<ModernGeofenceFormProps> = ({
                 size="large"
                 placeholder="Search and select a client"
                 showSearch
-                // filterOption={(input, option) =>
-                //   option?.children
-                //     ?.toString()
-                //     .toLowerCase()
-                //     .indexOf(input.toLowerCase()) >= 0
-                // }
                 onChange={handleClientSelect}
                 disabled={!!initialValues}
               >
@@ -150,7 +177,7 @@ export const GeofenceForm: React.FC<ModernGeofenceFormProps> = ({
                           {client.business_name}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {client.contact_person}
+                          {/* {client.contact_person} */}
                         </div>
                       </div>
                     </div>
@@ -174,8 +201,10 @@ export const GeofenceForm: React.FC<ModernGeofenceFormProps> = ({
                       {selectedClient.contact_person}
                     </div>
                     <div className="text-xs text-gray-500">
+                      {selectedClient.location_address?.street},{" "}
                       {selectedClient.location_address?.city},{" "}
                       {selectedClient.location_address?.state}
+                      {selectedClient.location_address?.postal_code}
                     </div>
                   </div>
                 </div>
@@ -232,7 +261,7 @@ export const GeofenceForm: React.FC<ModernGeofenceFormProps> = ({
                     <InputNumber
                       style={{ width: "100%" }}
                       size="large"
-                      placeholder="e.g., 37.7749"
+                      placeholder="e.g., 51.0447"
                       step={0.0001}
                       precision={6}
                     />
@@ -261,7 +290,7 @@ export const GeofenceForm: React.FC<ModernGeofenceFormProps> = ({
                     <InputNumber
                       style={{ width: "100%" }}
                       size="large"
-                      placeholder="e.g., -122.4194"
+                      placeholder="e.g., -114.0719"
                       step={0.0001}
                       precision={6}
                     />
@@ -269,15 +298,32 @@ export const GeofenceForm: React.FC<ModernGeofenceFormProps> = ({
                 </Col>
               </Row>
             ) : (
-              <div className="text-center py-8">
-                <AimOutlined className="text-4xl text-blue-500 mb-4" />
-                <p className="text-gray-600 mb-4">
-                  Map selection interface would appear here
-                </p>
-                <Button type="dashed" icon={<GlobalOutlined />}>
-                  Open Map Picker
-                </Button>
-              </div>
+            <div className="text-center py-8">
+    <AimOutlined className="text-4xl text-blue-500 mb-4" />
+    <p className="text-gray-600 mb-4">
+      Click to open interactive map and select location
+    </p>
+    <Button 
+      type="primary" 
+      icon={<GlobalOutlined />}
+      size="large"
+      onClick={() => setMapModalVisible(true)}
+      style={{ backgroundColor: "#0F6973", borderColor: "#0F6973" }}
+      loading={mapLoading}
+    >
+      {mapLoading ? 'Loading Map...' : 'Open Map Picker'}
+    </Button>
+    
+    {/* Show selected coordinates if any */}
+    {(form.getFieldValue("latitude") && form.getFieldValue("longitude")) && (
+      <div className="mt-4 p-3 bg-green-50 rounded border border-green-200">
+        <p className="text-sm text-green-800">
+          <strong>Selected Location:</strong><br />
+          Lat: {form.getFieldValue("latitude")}, Lng: {form.getFieldValue("longitude")}
+        </p>
+      </div>
+    )}
+  </div>
             )}
           </div>
         );
@@ -376,7 +422,7 @@ export const GeofenceForm: React.FC<ModernGeofenceFormProps> = ({
         );
 
       case 3:
-        const values = form.getFieldsValue(true); 
+        const values = form.getFieldsValue(true);
         return (
           <div className="space-y-6">
             <div className="text-center">
@@ -421,58 +467,72 @@ export const GeofenceForm: React.FC<ModernGeofenceFormProps> = ({
   };
 
   return (
-    <div className="p-6">
-      <Steps
-        current={currentStep}
-        items={steps.map((step, index) => ({
-          title: step.title,
-          description: currentStep === index ? step.description : undefined,
-          icon: step.icon,
-        }))}
-        responsive
-        className="mb-8"
-      />
+    <>
+      <div className="p-6">
+        <Steps
+          current={currentStep}
+          items={steps.map((step, index) => ({
+            title: step.title,
+            description: currentStep === index ? step.description : undefined,
+            icon: step.icon,
+          }))}
+          responsive
+          className="mb-8"
+        />
 
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleFinish}
-        initialValues={{
-          radius_meters: 500,
-          accuracy: 95,
-          status: "active",
-          ...initialValues,
-        }}
-      >
-        <div className="min-h-64 mb-6">{renderStepContent()}</div>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleFinish}
+          initialValues={{
+            radius_meters: 500,
+            accuracy: 95,
+            status: "active",
+            ...initialValues,
+          }}
+        >
+          <div className="min-h-64 mb-6">{renderStepContent()}</div>
 
-        <div className="flex justify-between pt-6 border-t border-gray-200">
-          <Button
-            onClick={handlePrev}
-            disabled={currentStep === 0}
-            size="large"
-          >
-            Previous
-          </Button>
-
-          {currentStep < steps.length - 1 ? (
-            <Button type="primary" onClick={handleNext} size="large">
-              Next
-            </Button>
-          ) : (
+          <div className="flex justify-between pt-6 border-t border-gray-200">
             <Button
-              type="primary"
-              htmlType="submit"
-              loading={loading}
-              style={{ backgroundColor: "#0F6973", borderColor: "#0F6973" }}
-              icon={<SaveOutlined />}
+              onClick={handlePrev}
+              disabled={currentStep === 0}
               size="large"
             >
-              {initialValues ? "Update Geofence" : "Create Geofence"}
+              Previous
             </Button>
-          )}
-        </div>
-      </Form>
-    </div>
+
+            {currentStep < steps.length - 1 ? (
+              <Button type="primary" onClick={handleNext} size="large">
+                Next
+              </Button>
+            ) : (
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={loading}
+                style={{ backgroundColor: "#0F6973", borderColor: "#0F6973" }}
+                icon={<SaveOutlined />}
+                size="large"
+              >
+                {initialValues ? "Update Geofence" : "Create Geofence"}
+              </Button>
+            )}
+          </div>
+        </Form>
+      </div>
+
+      {/* Advanced Google Maps Picker */}
+      <AdvancedMapPicker
+        visible={mapModalVisible}
+        onConfirm={handleAdvancedMapConfirm}
+        onCancel={() => setMapModalVisible(false)}
+        initialLatitude={form.getFieldValue("latitude") || 51.0447}
+        initialLongitude={form.getFieldValue("longitude") || -114.0719}
+        radiusMeters={form.getFieldValue("radius_meters") || 500}
+        showRadius={true}
+        title="Select Geofence Location"
+      />
+    </>
   );
 };

@@ -1,5 +1,7 @@
+// app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import "./globals.css";
 
@@ -18,6 +20,7 @@ export const metadata: Metadata = {
   description: "Manage employee shifts and schedules efficiently",
 };
 
+// app/layout.tsx
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -25,6 +28,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <Script
+          src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places,geometry&loading=async`}
+          strategy="lazyOnload"
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50`}
       >
