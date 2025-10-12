@@ -1,16 +1,52 @@
 // components/Dashboard/columns/geofenceColumns.tsx
 import React from 'react';
-import { Space, Avatar, Tag, Button, Tooltip, Popconfirm, Progress, Row, Col } from 'antd';
-import { UserOutlined, EnvironmentOutlined, RadarChartOutlined, EditOutlined, DeleteOutlined, AimOutlined } from '@ant-design/icons';
+import { Space, Avatar, Tag, Button, Tooltip, Popconfirm, Progress, Row, Col, Badge } from 'antd';
+import {
+  UserOutlined,
+  EnvironmentOutlined,
+  RadarChartOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  AimOutlined,
+  CheckCircleOutlined,
+  StopOutlined,
+  ClockCircleOutlined,
+} from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import { Geofence } from '@/lib/types/geofence';
 import { Client } from '@/lib/types/client';
+
+dayjs.extend(relativeTime);
+
+const getStatusIcon = (status: string) => {
+  switch (status) {
+    case 'active':
+      return <CheckCircleOutlined />;
+    case 'inactive':
+      return <StopOutlined />;
+    case 'pending':
+      return <ClockCircleOutlined />;
+    default:
+      return null;
+  }
+};
+
+const formatRadius = (radius: number): string => {
+  return radius >= 1000 ? `${(radius / 1000)}km` : `${radius}m`;
+};
+
+const calculateArea = (radiusMeters: number) => {
+  const area = Math.round(Math.PI * Math.pow(radiusMeters, 2));
+  const areaKm2 = area / 1000000;
+  return { area, areaKm2 };
+};
 
 export const geofenceTableColumns = (
   onEdit: (geofence: Geofence) => void,
   onDelete: (geofence: Geofence) => void,
-  onViewOnMap: (geofence: Geofence) => void, // NEW: Added this callback
+  onViewOnMap: (geofence: Geofence) => void,
   clients: Client[]
 ): ColumnsType<Geofence> => [
   {
@@ -21,55 +57,61 @@ export const geofenceTableColumns = (
     responsive: ['xs'],
     render: (clientId: number, record: Geofence) => {
       const client = clients.find((c) => c.id === clientId);
-      const area = Math.round(Math.PI * Math.pow(record.radius_meters, 2));
-      const areaKm2 = area / 1000000;
-      
+      const { area, areaKm2 } = calculateArea(record.radius_meters);
+
       return (
-        <div className="w-full">
-          <Row gutter={[8, 6]} align="top">
+        <div className="py-2">
+          <Row gutter={[8, 12]} align="top">
+            {/* Business & Radius */}
             <Col xs={24}>
-              <Row gutter={8} align="middle" wrap={false}>
+              <Row gutter={[12, 4]} align="middle" wrap={false}>
                 <Col flex="none">
-                  <Avatar icon={<UserOutlined />} size="small" style={{ backgroundColor: '#0F6973' }} />
+                  <div className="p-2 bg-teal-50 rounded-lg">
+                    <UserOutlined className="text-lg text-teal-600" />
+                  </div>
                 </Col>
                 <Col flex="auto" style={{ minWidth: 0 }}>
-                  <div className="font-medium text-sm truncate">
+                  <div className="font-semibold text-gray-900 truncate">
                     {client?.business_name || `Client ${clientId}`}
                   </div>
-                  <div className="text-xs text-gray-500 truncate">
-                    {record.radius_meters >= 1000 ? 
-                      `${(record.radius_meters / 1000)}km radius` : 
-                      `${record.radius_meters}m radius`
-                    }
+                  <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                    <RadarChartOutlined className="text-blue-600" />
+                    <span>{formatRadius(record.radius_meters)}</span>
                   </div>
                 </Col>
               </Row>
             </Col>
+
+            {/* Coordinates */}
             <Col xs={24}>
-              <Row gutter={8} align="middle">
+              <Row gutter={[8, 4]} align="middle" wrap={false}>
                 <Col flex="none">
-                  <EnvironmentOutlined className="text-gray-400 text-xs" />
+                  <EnvironmentOutlined className="text-blue-600 text-lg flex-shrink-0" />
                 </Col>
                 <Col flex="auto" style={{ minWidth: 0 }}>
-                  <div className="text-xs font-mono truncate">
+                  <div className="text-xs font-mono text-gray-700 truncate">
                     {record.latitude}, {record.longitude}
                   </div>
                 </Col>
               </Row>
             </Col>
+
+            {/* Status & Created Date */}
             <Col xs={24}>
-              <Row gutter={8} align="middle" justify="space-between">
-                {/* <Col>
-                  <Tag 
-                    size="small"
-                    color={record.status === 'active' ? 'green' : record.status === 'inactive' ? 'red' : 'orange'}
+              <Row gutter={[8, 4]} align="middle" justify="space-between">
+                <Col flex="auto">
+                  {/* <Tag
+                    icon={getStatusIcon(record.status)}
+                    color={record.status === 'active' ? 'success' : record.status === 'inactive' ? 'error' : 'warning'}
+                    className="font-medium"
+                    style={{ textTransform: 'capitalize', border: 'none', margin: 0 }}
                   >
                     {record.status}
-                  </Tag>
-                </Col> */}
-                <Col>
-                  <span className="text-xs text-gray-500">
-                    {dayjs(record.created_at).format('MMM D')}
+                  </Tag> */}
+                </Col>
+                <Col flex="none">
+                  <span className="text-xs text-gray-500 whitespace-nowrap">
+                    {dayjs(record.created_at).fromNow()}
                   </span>
                 </Col>
               </Row>
@@ -83,21 +125,25 @@ export const geofenceTableColumns = (
     title: 'Client',
     dataIndex: 'client_id',
     key: 'client',
-    width: '22%',
+    width: '20%',
     responsive: ['sm'],
     render: (clientId: number) => {
       const client = clients.find((c) => c.id === clientId);
       return (
-        <div className="w-full">
-          <Row gutter={[8, 4]} align="middle" wrap={false}>
+        <div className="py-2">
+          <Row gutter={[12, 4]} align="middle" wrap={false}>
             <Col flex="none">
-              <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#0F6973' }} />
+              <Avatar
+                size={36}
+                icon={<UserOutlined />}
+                style={{ backgroundColor: '#009688' }}
+              />
             </Col>
             <Col flex="auto" style={{ minWidth: 0 }}>
-              <div className="font-medium truncate" title={client?.business_name || `Client ${clientId}`}>
+              <div className="font-semibold text-gray-900 truncate" title={client?.business_name || `Client ${clientId}`}>
                 {client?.business_name || `Client ${clientId}`}
               </div>
-              <div className="text-sm text-gray-500 truncate" title={client?.contact_person || 'N/A'}>
+              <div className="text-xs text-gray-500 truncate" title={client?.contact_person || 'N/A'}>
                 {client?.contact_person || 'N/A'}
               </div>
             </Col>
@@ -110,17 +156,20 @@ export const geofenceTableColumns = (
     title: 'Location',
     dataIndex: 'latitude',
     key: 'coordinates',
-    width: '20%',
+    width: '18%',
     responsive: ['sm'],
     render: (latitude: number, record: Geofence) => (
-      <div className="w-full">
-        <Row gutter={[6, 4]} align="middle" wrap={false}>
+      <div className="py-2">
+        <Row gutter={[8, 4]} align="middle" wrap={false}>
           <Col flex="none">
-            <EnvironmentOutlined className="text-gray-400" />
+            <EnvironmentOutlined className="text-blue-600 flex-shrink-0" />
           </Col>
           <Col flex="auto" style={{ minWidth: 0 }}>
-            <div className="font-mono text-xs truncate" title={`${latitude}, ${record.longitude}`}>
-              {latitude} {record.longitude}
+            <div
+              className="font-mono text-xs text-gray-700 truncate"
+              title={`${latitude}, ${record.longitude}`}
+            >
+              {latitude}, {record.longitude}
             </div>
           </Col>
         </Row>
@@ -131,14 +180,18 @@ export const geofenceTableColumns = (
     title: 'Radius',
     dataIndex: 'radius_meters',
     key: 'radius',
-    width: '10%',
+    width: '12%',
     responsive: ['sm'],
+    align: 'center' as const,
     render: (radius: number) => (
-      <div className="w-full text-center">
-        <Tag color="blue" icon={<RadarChartOutlined />} className="whitespace-nowrap">
-          {radius >= 1000 ? `${(radius / 1000)}km` : `${radius}m`}
-        </Tag>
-      </div>
+      <Tag
+        icon={<RadarChartOutlined />}
+        color="blue"
+        className="font-medium"
+        style={{ textTransform: 'none', border: 'none', margin: 0 }}
+      >
+        {formatRadius(radius)}
+      </Tag>
     ),
     sorter: (a, b) => a.radius_meters - b.radius_meters,
   },
@@ -148,20 +201,20 @@ export const geofenceTableColumns = (
     width: '15%',
     responsive: ['md'],
     render: (_, record: Geofence) => {
-      const area = Math.round(Math.PI * Math.pow(record.radius_meters, 2));
-      const areaKm2 = area / 1000000;
-      
+      const { area, areaKm2 } = calculateArea(record.radius_meters);
+      const coverageLabel = areaKm2 >= 1 ? `${areaKm2} km²` : `${area.toLocaleString()} m²`;
+
       return (
-        <Tooltip title={`Approximate coverage area: ${area.toLocaleString()} m²`}>
-          <div className="w-full">
+        <Tooltip title={`Coverage area: ${area.toLocaleString()} m² (${coverageLabel})`}>
+          <div className="py-2">
             <Progress
               percent={Math.min((record.radius_meters / 5000) * 100, 100)}
               size="small"
-              strokeColor="#0F6973"
+              strokeColor="#009688"
               showInfo={false}
             />
-            <div className="text-xs text-gray-500 mt-1 truncate">
-              {areaKm2 >= 1 ? `${areaKm2} km²` : `${area.toLocaleString()} m²`}
+            <div className="text-xs text-gray-600 mt-2 font-medium text-center">
+              {coverageLabel}
             </div>
           </div>
         </Tooltip>
@@ -172,17 +225,22 @@ export const geofenceTableColumns = (
     title: 'Status',
     dataIndex: 'status',
     key: 'status',
-    width: '8%',
+    width: '10%',
     responsive: ['sm'],
+    align: 'center' as const,
     render: (status: string) => (
-      <div className="w-full text-center">
-        <Tag
-          color={status === 'active' ? 'green' : status === 'inactive' ? 'red' : 'orange'}
-          className="capitalize whitespace-nowrap"
-        >
-          {status}
-        </Tag>
-      </div>
+      <Tag
+        icon={getStatusIcon(status)}
+        color={status === 'active' ? 'success' : status === 'inactive' ? 'error' : 'warning'}
+        className="font-medium"
+        style={{
+          textTransform: 'capitalize',
+          border: 'none',
+          margin: 0,
+        }}
+      >
+        {status}
+      </Tag>
     ),
   },
   {
@@ -191,52 +249,71 @@ export const geofenceTableColumns = (
     key: 'created_at',
     width: '15%',
     responsive: ['lg'],
-    render: (date: string) => (
-      <div className="w-full">
-        <div className="text-sm whitespace-nowrap">{dayjs(date).format('MMM D, YYYY')}</div>
-        <div className="text-xs text-gray-500 whitespace-nowrap">{dayjs(date).format('h:mm A')}</div>
+    render: (created_at: string) => (
+      <div className="py-2">
+        <div className="text-sm font-medium text-gray-900">
+          {dayjs(created_at).format('MMM D, YYYY')}
+        </div>
+        <div className="text-xs text-gray-500 mt-1">
+          {dayjs(created_at).fromNow()}
+        </div>
       </div>
     ),
   },
   {
     title: 'Actions',
     key: 'actions',
-    width: '5%',
+    width: '10%',
     responsive: ['sm'],
+    align: 'right' as const,
     render: (_, record: Geofence) => (
-      <div className="w-full">
-        <Row gutter={[6, 6]} justify="end" wrap={false}>
-          <Col>
-            <Tooltip title="Edit Geofence">
-              <Button icon={<EditOutlined />} size="small" onClick={() => onEdit(record)} />
-            </Tooltip>
-          </Col>
-          
-           <Col>
-  <Tooltip title="View on Map">
-    <Button 
-      icon={<AimOutlined />} 
-      size="small" 
-      onClick={() => onViewOnMap(record)} // ADDED: onClick handler
-    />
-  </Tooltip>
+      <Space size="small" wrap>
+        {/* Edit */}
+        <Tooltip title="Edit Geofence" placement="top">
+          <Button
+            type="text"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => onEdit(record)}
+            className="hover:!bg-orange-50 !text-orange-600"
+          />
+        </Tooltip>
 
-          </Col>
-          <Col>
-            <Popconfirm
-              title="Delete Geofence"
-              description="Are you sure you want to delete this geofence?"
-              onConfirm={() => onDelete(record)}
-              okText="Yes"
-              cancelText="No"
-            >
-              <Tooltip title="Delete Geofence">
-                <Button icon={<DeleteOutlined />} size="small" danger />
-              </Tooltip>
-            </Popconfirm>
-          </Col>
-        </Row>
-      </div>
+        {/* View on Map */}
+        <Tooltip title="View on Map" placement="top">
+          <Button
+            type="text"
+            size="small"
+            icon={<AimOutlined />}
+            onClick={() => onViewOnMap(record)}
+            className="hover:!bg-green-50 !text-green-600"
+          />
+        </Tooltip>
+
+        {/* Delete */}
+        <Popconfirm
+          title="Delete Geofence"
+          description="This action cannot be undone. The geofence will be permanently removed."
+          onConfirm={() => onDelete(record)}
+          okText="Delete"
+          cancelText="Cancel"
+          okButtonProps={{
+            danger: true,
+          }}
+          cancelButtonProps={{
+            type: 'default',
+          }}
+        >
+          <Tooltip title="Delete Geofence" placement="top">
+            <Button
+              type="text"
+              size="small"
+              icon={<DeleteOutlined />}
+              className="hover:!bg-red-50 !text-red-600"
+            />
+          </Tooltip>
+        </Popconfirm>
+      </Space>
     ),
   },
 ];

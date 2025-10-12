@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Users, Clock, Calendar, MapPin, ClipboardList, 
   FileSpreadsheet, ChevronLeft, ChevronRight, QrCode, X, Menu, 
-  UserCircle, Settings, Bell, LogOut, User, HelpCircle, ChevronDown 
+  UserCircle, Settings, Bell, LogOut, User, HelpCircle, ChevronDown, 
+  Camera
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -29,7 +30,8 @@ const topNavItems = [
   // { href: '/admin/qrcode', icon: QrCode, label: 'QR Codes' },
   { href: '/admin/shifts', icon: Calendar, label: 'Scheduling' },
   { href: '/admin/attendance', icon: Clock, label: 'Attendance' },
-  { href: '/admin/users', icon: Settings, label: 'User Management' },
+  { href: '/admin/taskCompletion', icon: Camera, label: 'Task Photo' },
+  { href: '/admin/users', icon: Settings, label: 'Users Account' },
 ];
 
 const reportsNavItems = [
@@ -51,6 +53,7 @@ const getPageTitle = (pathname: string) => {
     shifts: 'Multi-Location Shift Scheduler',
     clients: 'Client Management',
     locations: 'Client Management',
+    taskCompletion: 'Quality Control Dashboard',
     users: 'User Management',
     qrcode: 'QR Code Management',
     reports: 'Analytics Reports',

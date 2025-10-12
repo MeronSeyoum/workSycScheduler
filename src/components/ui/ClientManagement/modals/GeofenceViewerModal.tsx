@@ -306,7 +306,7 @@ export const GeofenceViewerModal: React.FC<GeofenceViewerModalProps> = ({
       styles={{
         body: {
           padding: '16px', 
-          height: '75vh', 
+          height: '70vh', 
           minHeight: '500px',
         }
       }}
@@ -333,7 +333,7 @@ export const GeofenceViewerModal: React.FC<GeofenceViewerModalProps> = ({
                 borderRadius: '8px',
                 border: '1px solid #d9d9d9',
                 position: 'relative',
-                minHeight: '660px',
+                minHeight: '500px',
                 backgroundColor: mapLoading ? '#f5f5f5' : 'transparent',
               }}
             >

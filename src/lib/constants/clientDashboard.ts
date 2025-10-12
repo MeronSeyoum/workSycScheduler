@@ -1,8 +1,8 @@
 // constants/dashboard.ts
 export const CLIENT_STATUS_COLOR_MAP = {
-  active: 'green',
-  inactive: 'red',
-  on_hold: 'orange',
+  active: "#52c41a",
+  inactive:  "#8c8c8c",
+  on_hold: "#fa541c",
 } as const;
 
 export const GEOFENCE_STATUS_OPTIONS = [

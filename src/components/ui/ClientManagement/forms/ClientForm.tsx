@@ -41,7 +41,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
   };
 
   return (
-    <div className="px-6">
+    <div className="">
       <Form
         form={form}
         layout="vertical"

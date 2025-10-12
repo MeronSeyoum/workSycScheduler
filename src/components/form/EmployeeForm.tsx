@@ -198,7 +198,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
           </Row>
 
           <Row gutter={16}>
-            <Col span={12}>
+            <Col span={24}>
               <Form.Item
                 name="profile_image_url"
                 label="Profile Image URL"
