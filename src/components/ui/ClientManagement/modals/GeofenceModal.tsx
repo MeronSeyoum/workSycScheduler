@@ -1,5 +1,3 @@
-
-
 // components/Dashboard/modals/GeofenceModal.tsx
 import React from 'react';
 import { Modal } from 'antd';

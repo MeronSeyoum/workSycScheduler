@@ -29,57 +29,44 @@ export const GeofenceManagementTab: React.FC<GeofenceManagementTabProps> = ({
   const [modalVisible, setModalVisible] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
 
-   const [viewerModalVisible, setViewerModalVisible] = useState(false);
+  const [viewerModalVisible, setViewerModalVisible] = useState(false);
   const [geofenceToView, setGeofenceToView] = useState<Geofence | null>(null);
 
-const handleGeofenceSubmit = async (values: any) => {
-  setFormLoading(true);
-  try {
-    const isUpdate = 'id' in values; // Check if this is an update
+  const handleGeofenceSubmit = async (values: any) => {
+    setFormLoading(true);
+    try {
+      // Validate required fields
+      if (!values.client_id || values.latitude === undefined || values.longitude === undefined || !values.radius_meters) {
+        throw new Error('All required fields must be filled');
+      }
 
-    // Validate required fields
-    if (!values.client_id || values.latitude === undefined || values.longitude === undefined || !values.radius_meters) {
-      throw new Error('All required fields must be filled');
-    }
-
-    if (isUpdate) {
-      // For updates, values should be a complete Geofence object
-      const updateData: Geofence = {
-        id: values.id,
-        client_id: values.client_id,
-        latitude: parseFloat(values.latitude.toString()),
-        longitude: parseFloat(values.longitude.toString()),
-        radius_meters: parseInt(values.radius_meters.toString()),
-        // Preserve existing timestamps if they exist
-        created_at: values.created_at,
-        updated_at: new Date().toISOString(), // Update timestamp
-      };
-      
-      await geofenceData.updateGeofence(values.id, updateData);
-      showNotification('success', '', 'Geofence updated successfully');
-    } else {
-      // For creates, values is just the form data
-      const createData = {
+      // Prepare the data to send to API (only editable fields)
+      const submitData = {
         client_id: values.client_id,
         latitude: parseFloat(values.latitude.toString()),
         longitude: parseFloat(values.longitude.toString()),
         radius_meters: parseInt(values.radius_meters.toString()),
       };
-      
-      await geofenceData.createGeofence(createData);
-      showNotification('success', '', 'Geofence created successfully');
+
+      if (selectedGeofence?.id) {
+        // Update: pass geofence ID and only the updatable fields
+        await geofenceData.updateGeofence(selectedGeofence.id, submitData);
+        showNotification('success', '', 'Geofence updated successfully');
+      } else {
+        // Create: just pass the form data
+        await geofenceData.createGeofence(submitData);
+        showNotification('success', '', 'Geofence created successfully');
+      }
+
+      setModalVisible(false);
+      setSelectedGeofence(null);
+    } catch (error: any) {
+      const action = selectedGeofence?.id ? 'update' : 'create';
+      showNotification('error', `Failed to ${action} geofence`, error.message);
+    } finally {
+      setFormLoading(false);
     }
-
-    setModalVisible(false);
-    setSelectedGeofence(null);
-  } catch (error: any) {
-    const action = 'id' in values ? 'update' : 'create';
-    showNotification('error', `Failed to ${action} geofence`, error.message);
-  } finally {
-    setFormLoading(false);
-  }
-};
-
+  };
 
   const handleEdit = (geofence: Geofence) => {
     setSelectedGeofence(geofence);
@@ -94,18 +81,19 @@ const handleGeofenceSubmit = async (values: any) => {
       showNotification('error', 'Failed to delete geofence', error.message);
     }
   };
-  
-    const handleViewOnMap = (geofence: Geofence) => {
+
+  const handleViewOnMap = (geofence: Geofence) => {
     setGeofenceToView(geofence);
     setViewerModalVisible(true);
   };
 
- const columns = geofenceTableColumns(
-  handleEdit, 
-  handleDelete, 
-  handleViewOnMap, // ADDED: Pass the new callback
-  clients
-);
+  const columns = geofenceTableColumns(
+    handleEdit,
+    handleDelete,
+    handleViewOnMap,
+    clients
+  );
+
   return (
     <Card
       title="Geofence Management"
@@ -179,7 +167,7 @@ const handleGeofenceSubmit = async (values: any) => {
         />
       </GeofenceModal>
 
-       <GeofenceViewerModal
+      <GeofenceViewerModal
         visible={viewerModalVisible}
         onClose={() => {
           setViewerModalVisible(false);
