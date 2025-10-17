@@ -30,7 +30,7 @@ const topNavItems = [
   // { href: '/admin/qrcode', icon: QrCode, label: 'QR Codes' },
   { href: '/admin/shifts', icon: Calendar, label: 'Scheduling' },
   { href: '/admin/attendance', icon: Clock, label: 'Attendance' },
-  { href: '/admin/taskCompletion', icon: Camera, label: 'Task Photo' },
+  { href: '/admin/taskManagement', icon: Camera, label: 'Shift Quality Control' },
   { href: '/admin/users', icon: Settings, label: 'Users Account' },
 ];
 
@@ -53,7 +53,7 @@ const getPageTitle = (pathname: string) => {
     shifts: 'Multi-Location Shift Scheduler',
     clients: 'Client Management',
     locations: 'Client Management',
-    taskCompletion: 'Quality Control Dashboard',
+    taskManagement: 'Quality Control Hub',
     users: 'User Management',
     qrcode: 'QR Code Management',
     reports: 'Analytics Reports',

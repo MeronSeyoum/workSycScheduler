@@ -23,6 +23,7 @@ export interface Shift extends Timestamps {
   shift_type: ShiftType;
   notes?: string;
   status?: string;
+  client: Client;
 }
 
 // Employee Shift Junction

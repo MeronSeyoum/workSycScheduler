@@ -1,5 +1,5 @@
 'use client';
-import PhotosAndComplaints from "@/app/pages/PhotosAndComplaints";
+import PhotosAndComplaints from "@/app/pages/TaskManagment";
 import AdminLayout from "../layout/AdminLayout";
 
 export default function AdminRootLayout() {
